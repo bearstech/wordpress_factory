@@ -1,0 +1,10 @@
+web:
+    image: wordpress
+    links:
+        - db
+    ports:
+        - "8000:80"
+    volumes:
+        - "./src/wordpress/:/var/www/test/root"
+db:
+    image: mysql
