@@ -10,10 +10,14 @@ ADD website.conf /etc/apache2/sites-available/
 RUN ln -s /etc/apache2/sites-available/website.conf /etc/apache2/sites-enabled/
 ADD fcgid.conf /etc/apache2/mods-available/
 
-RUN mkdir /opt/wpcli
+RUN mkdir -p /opt/wpcli
+WORKDIR /opt/wpcli
 ADD https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /opt/wpcli/
-RUN chmod +x /opt/wpcli/wp-cli.phar
+RUN chmod +x wp-cli.phar
 RUN ln -s /opt/wpcli/wp-cli.phar /usr/local/bin/wp
+ADD wp-cli.yml /opt/wpcli/
+ADD factory /opt/wpcli/
+RUN ln -s /opt/wpcli/factory /usr/local/bin/
 
 EXPOSE 80
 

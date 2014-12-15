@@ -1,0 +1,9 @@
+#!/bin/sh
+
+if [ $1="site" ]
+then
+wp core install --allow-root --url=test.example.lan:8000 --title="Wordpress de test" \
+    --admin_email=mlecarme@bearstech.com \
+    --admin_user=bob \
+    --admin_password=toto;
+fi
