@@ -4,7 +4,7 @@ RUN apt-get update
 RUN apt-get -y upgrade
 RUN apt-get -y install php5-cgi php5-mysql apache2-mpm-worker apache2-suexec \
     libapache2-mod-fcgid php-apc php5-memcached php5-curl php5-gd php5-intl \
-    php-pear php5-imagick php5-imap php5-mcrypt php5-cli less
+    php-pear php5-imagick php5-imap php5-mcrypt php5-cli less wget
 RUN mkdir -p /var/log/apache2/test.example.com
 ADD website.conf /etc/apache2/sites-available/
 RUN ln -s /etc/apache2/sites-available/website.conf /etc/apache2/sites-enabled/
@@ -12,10 +12,12 @@ ADD fcgid.conf /etc/apache2/mods-available/
 
 RUN mkdir -p /opt/wpcli
 WORKDIR /opt/wpcli
-ADD https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar /opt/wpcli/
+# too many redirection for an ADD
+RUN wget https://github.com/wp-cli/wp-cli/releases/download/v0.17.1/wp-cli.phar
 RUN chmod +x wp-cli.phar
 RUN ln -s /opt/wpcli/wp-cli.phar /usr/local/bin/wp
 ADD wp-cli.yml /opt/wpcli/
+
 ADD factory /opt/wpcli/
 RUN ln -s /opt/wpcli/factory /usr/local/bin/
 
