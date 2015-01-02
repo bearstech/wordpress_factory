@@ -21,6 +21,12 @@ ADD wp-cli.yml /opt/wpcli/
 ADD factory /opt/wpcli/
 RUN ln -s /opt/wpcli/factory /usr/local/bin/
 
+RUN mkdir -p /usr/share/phptop
+ADD https://raw.githubusercontent.com/bearstech/phptop/wp/phptop_hook.php /usr/share/phptop/
+RUN chmod +r /usr/share/phptop/phptop_hook.php
+ADD https://raw.githubusercontent.com/bearstech/phptop/master/debian/phptop.ini etc/php5/conf.d/
+RUN chmod +r /etc/php5/conf.d/phptop.ini
+
 EXPOSE 80
 
 VOLUME /var/www/test/root
