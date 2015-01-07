@@ -1,6 +1,20 @@
 #!/usr/bin/env python
 # encoding:utf8
 
+"""
+Wordpress manager.
+
+Usage:
+    wp.py plugin --path=<path> --server=<server> [--user=<user>] [--json]
+
+Options:
+    --json                         Json output
+    -s <server>, --server=<server> Server
+    -p <path>, --path=<path>       Worpdress root path
+    -u <user>, --user=<user>       SSH user [default: root]
+"""
+
+__version__ = '0.1'
 import requests
 import requests_cache
 
@@ -39,21 +53,38 @@ class Wordpress(object):
 
 
 if __name__ == '__main__':
-    from pprint import pprint
+    from docopt import docopt
     import json
     import sys
     import subprocess
 
-    assert len(sys.argv) >= 3
-    server = sys.argv[1]
-    path = sys.argv[2]
+    arguments = docopt(__doc__, version='Wordpress Manager %s' % __version__)
+
     w = Wordpress()
 
-    cmd = subprocess.Popen(['ssh', 'root@%s' % server, '/root/wp-cli.phar',
-                     '--allow-root', '--path=%s' % path, 'plugin', 'list',
-                     '--fields=name,status,version,update_version',
-                     '--format=json'], stdout=subprocess.PIPE)
-    old = cmd.stdout.readlines()[-1]
-    old = json.loads(old)
-    for new, name, versions in w.plugin_outdated(old, ['bnp']):
-        print "✓" if new else "☠", name, "%s => %s" % versions if new else ""
+    if arguments['plugin']:
+        server = arguments['--server']
+        path = arguments['--path']
+        user = arguments['--user']
+        js = arguments.get('--json', False)
+        cmd = subprocess.Popen(['ssh', '%s@%s' % (user, server),
+                                '/root/wp-cli.phar', '--allow-root',
+                                '--path=%s' % path, 'plugin', 'list',
+                                '--fields=name,status,version,update_version',
+                                '--format=json'], stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        old = cmd.stdout.readlines()[-1]
+        old = json.loads(old)
+        out = sys.stdout
+        if js:
+            out.write("[")
+        for new, name, versions in w.plugin_outdated(old, ['bnp']):
+            if js:
+                json.dump(dict(new=new, name=name, versions=versions), out)
+            else:
+                out.write("✓ " if new else "☠ ")
+                out.write(name)
+                out.write(" %s => %s" % versions if new else "")
+                out.write("\n")
+        if js:
+            out.write("]")
