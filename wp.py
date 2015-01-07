@@ -13,11 +13,11 @@ class Wordpress(object):
         self.session = requests.Session()
 
     def version(self):
-        r = requests.get('https://api.wordpress.org/core/version-check/1.7/')
+        r = self.session.get('https://api.wordpress.org/core/version-check/1.7/', verify=True)
         return r.json()
 
     def plugin(self, slug):
-        r = requests.get('https://api.wordpress.org/plugins/info/1.0/{slug}.json'.format(slug=slug))
+        r = self.session.get('https://api.wordpress.org/plugins/info/1.0/{slug}.json'.format(slug=slug), verify=True)
         if r.status_code != 200:
             return None
         return r.json()
