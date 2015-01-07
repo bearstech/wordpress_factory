@@ -42,9 +42,18 @@ if __name__ == '__main__':
     from pprint import pprint
     import json
     import sys
+    import subprocess
+
+    assert len(sys.argv) >= 3
+    server = sys.argv[1]
+    path = sys.argv[2]
     w = Wordpress()
-    #pprint(w.plugin('secure-wordpress'))
-    old = json.load(open(sys.argv[1]))
+
+    cmd = subprocess.Popen(['ssh', 'root@%s' % server, '/root/wp-cli.phar',
+                     '--allow-root', '--path=%s' % path, 'plugin', 'list',
+                     '--fields=name,status,version,update_version',
+                     '--format=json'], stdout=subprocess.PIPE)
+    old = cmd.stdout.readlines()[-1]
+    old = json.loads(old)
     for new, name, versions in w.plugin_outdated(old, ['bnp']):
         print "✓" if new else "☠", name, "%s => %s" % versions if new else ""
-
