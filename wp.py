@@ -2,9 +2,15 @@
 # encoding:utf8
 
 import requests
+import requests_cache
+
+requests_cache.install_cache('wp_cache', backend='sqlite', expire_after=300)
 
 
 class Wordpress(object):
+
+    def __init__(self):
+        self.session = requests.Session()
 
     def version(self):
         r = requests.get('https://api.wordpress.org/core/version-check/1.7/')
