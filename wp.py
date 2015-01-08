@@ -5,10 +5,11 @@
 Wordpress manager.
 
 Usage:
-    wp.py plugin --path=<path> --server=<server> [--user=<user>] [--json]
+    wp.py plugin --path=<path> --server=<server> [--user=<user>] [--json|--html]
 
 Options:
     --json                         Json output
+    --html                         HTML output
     -s <server>, --server=<server> Server
     -p <path>, --path=<path>       Worpdress root path
     -u <user>, --user=<user>       SSH user [default: root]
@@ -67,6 +68,7 @@ if __name__ == '__main__':
         path = arguments['--path']
         user = arguments['--user']
         js = arguments.get('--json', False)
+        html = arguments.get('--html', False)
         cmd = subprocess.Popen(['ssh', '%s@%s' % (user, server),
                                 '/root/wp-cli.phar', '--allow-root',
                                 '--path=%s' % path, 'plugin', 'list',
@@ -76,15 +78,31 @@ if __name__ == '__main__':
         old = cmd.stdout.readlines()[-1]
         old = json.loads(old)
         out = sys.stdout
-        if js:
-            out.write("[")
-        for new, name, versions in w.plugin_outdated(old, ['bnp']):
+        if html:
+            out.write('<html><body>')
+            out.write('<table>')
+            out.write('<tr><th>Name</th><th>Current version</th><th>Update version</th></tr>')
+            for new, name, versions in w.plugin_outdated(old, ['bnp']):
+                if versions:
+                    old = versions[0]
+                    update = versions[1]
+                else:
+                    old = ""
+                    update = ""
+                out.write('<tr><td>{name}</td><td>{old}</td><td>{update}</td></tr>\n'.format(name=name, old=old, update=update))
+
+            out.write('</table>')
+            out.write('</body></html>\n')
+        else:
             if js:
-                json.dump(dict(new=new, name=name, versions=versions), out)
-            else:
-                out.write("✓ " if new else "☠ ")
-                out.write(name)
-                out.write(" %s => %s" % versions if new else "")
-                out.write("\n")
-        if js:
-            out.write("]")
+                out.write("[")
+            for new, name, versions in w.plugin_outdated(old, ['bnp']):
+                if js:
+                    json.dump(dict(new=new, name=name, versions=versions), out)
+                else:
+                    out.write("✓ " if new else "☠ ")
+                    out.write(name)
+                    out.write(" %s => %s" % versions if new else "")
+                    out.write("\n")
+            if js:
+                out.write("]")
