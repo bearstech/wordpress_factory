@@ -7,10 +7,7 @@ RUN echo 'mysql-server-5.5 mysql-server/root_password password mypass' | debconf
     apt-get -q install -y mysql-server
 RUN sed -i -e"s/^bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/" /etc/mysql/my.cnf
 RUN /etc/init.d/mysql start && \
-    mysql --password=mypass -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'mypass';" &&\
-    mysql --password=mypass -e "CREATE DATABASE IF NOT EXISTS test;" &&\
-    mysql --password=mypass -e "CREATE USER 'test'@'%' IDENTIFIED BY 'test';" &&\
-    mysql --password=mypass -e "GRANT ALL ON test.* TO 'test'@'%';"
+    mysql --password=mypass -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'mypass'; UPDATE mysql.user SET Grant_priv='Y' WHERE user='root' AND host='%';"
 
 EXPOSE 3306
 
