@@ -15,6 +15,7 @@ Usage:
     wpfactory plugin
     wpfactory update
     wpfactory upgrade
+    wpfactory db export
 
 Options:
     --json                         Json output
@@ -126,8 +127,12 @@ db:
         if arguments['wordpress']:
             if not os.path.exists('log'):
                 os.mkdir('log')
+            if not os.path.exists('dump'):
+                os.mkdir('dump')
             docker('run',  '--name=wordpress', '--hostname=wordpress.example.com', '-d', '-p', '8000:80',
-                   '--volume' , '%s/wordpress:/var/www/test/root' % cwd, '--volume', '%s/log:/var/log/apache2/' % cwd,
+                   '--volume' , '%s/wordpress:/var/www/test/root' % cwd,
+                   '--volume', '%s/log:/var/log/apache2/' % cwd,
+                   '--volume', '%s/dump:/dump/' % cwd,
                          '--link=mysql:db', 'wordpress')
         elif arguments['mysql']:
             docker('run', '--name=mysql', '-d', '-p', '3306', 'mysql')
@@ -155,3 +160,7 @@ db:
         wp('core', 'verify-checksums')
         wp('core', 'update')
         wp('core', 'update-db')
+
+    if arguments['db']:
+        if arguments['export']:
+            wp('db', 'export', '/dump/dump.sql')
