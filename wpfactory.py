@@ -155,3 +155,10 @@ db:
         wp('plugin', 'list', '--fields=name,version,update_version')
         wp('theme', 'list', '--fields=name,version,update_version')
         wp('core', 'check-update')
+
+    if arguments['upgrade']:
+        wp('plugin', 'update', '--all')
+        wp('theme', 'update', '--all')
+        wp('core', 'verify-checksums')
+        wp('core', 'update')
+        wp('core', 'update-db')
