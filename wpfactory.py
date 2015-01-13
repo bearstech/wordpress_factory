@@ -45,7 +45,8 @@ def wp(*args):
     return docker(*args)
 
 def mysql(*args):
-    args = ['exec', '-ti', 'wordpress', 'mysql', '-h', 'db', '--password=mypass', '-e'] + list(args)
+    args = ['exec', '-ti', 'wordpress', 'mysql', '-h', 'db',
+            '--password=mypass', '-e'] + list(args)
     return docker(*args)
 
 if __name__ == '__main__':
