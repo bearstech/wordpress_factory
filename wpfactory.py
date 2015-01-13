@@ -120,7 +120,7 @@ db:
         if arguments['wordpress']:
             docker('build', '-t', 'wordpress', './docker/wordpress')
         if arguments['mysql']:
-            docker('build', '-t', 'wordpress', './docker/wordpress')
+            docker('build', '-t', 'mysql', './docker/mysql')
 
     if arguments['run']:
         if arguments['wordpress']:
