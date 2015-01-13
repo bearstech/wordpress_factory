@@ -49,6 +49,11 @@ def mysql(*args):
             '--password=mypass', '-e'] + list(args)
     return docker(*args)
 
+def config():
+    with open('wordpress.yml', 'r') as f:
+        conf = yaml.load(f)
+    return conf
+
 if __name__ == '__main__':
     from docopt import docopt
     import os
@@ -80,9 +85,8 @@ db:
     pass: password
 """)
 
-    if arguments['init']:
-        with open('wordpress.yml', 'r') as f:
-            conf = yaml.load(f)
+    if arguments['config']:
+        conf = config()
         mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
         mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
                                                                             password=conf['db']['pass']))
@@ -111,21 +115,20 @@ db:
         if arguments['mysql']:
             docker('build', '-t', 'wordpress', './docker/wordpress')
 
-    if arguments['start']:
+    if arguments['run']:
         if arguments['wordpress']:
-            pid = docker('run',  '--name=wordpress', '-d', '-p', '8000:80',
-                         '--volume' , '%s/wordpress:/var/www/test/root' % cwd,
+            if not os.path.exists('log'):
+                os.mkdir('log')
+            docker('run',  '--name=wordpress', '--hostname=wordpress.example.com', '-d', '-p', '8000:80',
+                   '--volume' , '%s/wordpress:/var/www/test/root' % cwd, '--volume', '%s/log:/var/log/apache2/' % cwd,
                          '--link=mysql:db', 'wordpress')
-            with open('%s/wp.pid' % cwd, 'w') as f:
-                f.write(pid)
         elif arguments['mysql']:
             docker('run', '--name=mysql', '-d', '-p', '3306', 'mysql')
         else:
             pass
 
     if arguments['plugin']:
-        with open('wordpress.yml', 'r') as f:
-            conf = yaml.load(f)
+        conf = config()
         for plugin in conf['plugin']:
             wp('plugin', 'install', plugin)
             wp('plugin', 'activate', plugin)
