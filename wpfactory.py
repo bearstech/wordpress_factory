@@ -20,17 +20,22 @@ Options:
 __version__ = '0.1'
 
 from subprocess import Popen, PIPE
+import sys
 import yaml
+from cStringIO import StringIO
 
 
 def docker(*args):
     print " ".join(['docker'] + list(args))
     p = Popen(['docker'] + list(args), stdout=PIPE, stderr=PIPE)
-    p.wait()
+    f = StringIO()
+    for line in iter(p.stdout.readline, ''):
+        sys.stdout.write(line)
+        f.write(line)
     e = p.stderr.read()
     if e:
         raise Exception(e)
-    return p.stdout.read()
+    return f
 
 def wp(*args):
     args = ['exec', '-ti', 'wordpress', 'wp', '--allow-root'] + list(args)
@@ -74,20 +79,20 @@ db:
     if arguments['init']:
         with open('wordpress.yml', 'r') as f:
             conf = yaml.load(f)
-        print mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
-        print mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
-                                                                               password=conf['db']['pass']))
-        print mysql("GRANT ALL ON {name}.* TO '{user}'@'%';".format(name=conf['db']['name'],
+        mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
+        mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
+                                                                            password=conf['db']['pass']))
+        mysql("GRANT ALL ON {name}.* TO '{user}'@'%';".format(name=conf['db']['name'],
                                                                      user=conf['db']['user']))
-        print mysql("FLUSH PRIVILEGES;")
-        print wp('core', 'download')
-        print wp('core', 'config', '--skip-check',
-                 '--dbname=%s' % conf['db']['name'],
-                 '--dbuser=%s' % conf['db']['user'],
-                 '--dbpass=%s' % conf['db']['pass'],
-                 '--dbhost=db'
-                 )
-        print wp('core', 'install', '--url=%s' % conf['url'],
+        mysql("FLUSH PRIVILEGES;")
+        wp('core', 'download')
+        wp('core', 'config', '--skip-check',
+           '--dbname=%s' % conf['db']['name'],
+           '--dbuser=%s' % conf['db']['user'],
+           '--dbpass=%s' % conf['db']['pass'],
+           '--dbhost=db'
+           )
+        wp('core', 'install', '--url=%s' % conf['url'],
            '--title="%s"' % conf['name'], '--admin_email=%s' % conf['admin']['email'],
            '--admin_user=%s' % conf['admin']['user'], '--admin_password=%s' %
            conf['admin']['password'])
@@ -111,14 +116,14 @@ db:
     CustomLog /var/log/apache2/{name}/access.log combined
 </VirtualHost>
 """.format(name=conf['url'].split(':')[0])
-        print docker('exec', '-ti', 'wordpress', 'echo', apache, '>', '/etc/apache2/sites-available/website.conf')
-        print docker('restart', 'wordpress')
+        docker('exec', '-ti', 'wordpress', 'echo', apache, '>', '/etc/apache2/sites-available/website.conf')
+        docker('restart', 'wordpress')
 
     if arguments['build']:
         if arguments['wordpress']:
-            print docker('build', '-t', 'wordpress', './docker/wordpress')
+            docker('build', '-t', 'wordpress', './docker/wordpress')
         if arguments['mysql']:
-            print docker('build', '-t', 'wordpress', './docker/wordpress')
+            docker('build', '-t', 'wordpress', './docker/wordpress')
 
     if arguments['start']:
         if arguments['wordpress']:
