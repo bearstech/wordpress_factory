@@ -12,6 +12,9 @@ Usage:
     wpfactory start wordpress
     wpfactory build mysql
     wpfactory build wordpress
+    wpfactory plugin
+    wpfactory update
+    wpfactory upgrade
 
 Options:
     --json                         Json output
@@ -137,3 +140,18 @@ db:
         else:
             pass
 
+    if arguments['plugin']:
+        with open('wordpress.yml', 'r') as f:
+            conf = yaml.load(f)
+        for plugin in conf['plugin']:
+            wp('plugin', 'install', plugin)
+            wp('plugin', 'activate', plugin)
+
+    if arguments['update']:
+        wp('cron', 'event', 'run', 'wp_version_check')
+        wp('cron', 'event', 'run', 'wp_update_themes')
+        wp('cron', 'event', 'run', 'wp_update_plugins')
+        wp('cron', 'event', 'run', 'wp_maybe_auto_update')
+        wp('plugin', 'list', '--fields=name,version,update_version')
+        wp('theme', 'list', '--fields=name,version,update_version')
+        wp('core', 'check-update')
