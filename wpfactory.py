@@ -75,6 +75,8 @@ if __name__ == '__main__':
 
 url: test.example.lan:8000
 name: Wordpress Factory Test
+language:
+    - en
 admin:
     email: admin@example.lan
     user: admin
@@ -104,6 +106,11 @@ db:
            '--title="%s"' % conf['name'], '--admin_email=%s' % conf['admin']['email'],
            '--admin_user=%s' % conf['admin']['user'], '--admin_password=%s' %
            conf['admin']['password'])
+
+        for language in conf['language']:
+            if language != 'en':
+                wp('core', 'language', 'install', language)
+                wp('core', 'language', 'activate', language)
 
         domain = conf['url'].split(':')[0]
         docker('exec', '-ti', 'wordpress', '/opt/website_conf.py', domain)
