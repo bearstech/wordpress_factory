@@ -6,10 +6,10 @@ Wordpress factory.
 
 Usage:
     wpfactory scaffold
-    wpfactory init
-    wpfactory start
-    wpfactory start mysql
-    wpfactory start wordpress
+    wpfactory run
+    wpfactory run mysql
+    wpfactory run wordpress
+    wpfactory config
     wpfactory build mysql
     wpfactory build wordpress
     wpfactory plugin
@@ -28,9 +28,9 @@ import yaml
 from cStringIO import StringIO
 
 
-def docker(*args):
+def docker(*args, **opts):
     print " ".join(['docker'] + list(args))
-    p = Popen(['docker'] + list(args), stdout=PIPE, stderr=PIPE)
+    p = Popen(['docker'] + list(args), stdout=PIPE, stderr=PIPE, **opts)
     f = StringIO()
     for line in iter(p.stdout.readline, ''):
         sys.stdout.write(line)
