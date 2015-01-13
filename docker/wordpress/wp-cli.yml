@@ -1,3 +1,5 @@
 ---
 
 path: /var/www/test/root
+require:
+    - /opt/dictator/dictator.php

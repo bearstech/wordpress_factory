@@ -4,7 +4,7 @@ RUN apt-get update
 RUN apt-get -y upgrade
 RUN apt-get -y install php5-cgi php5-mysql apache2-mpm-worker apache2-suexec \
     libapache2-mod-fcgid php-apc php5-memcached php5-curl php5-gd php5-intl \
-    php-pear php5-imagick php5-imap php5-mcrypt php5-cli less wget mysql-client python
+    php-pear php5-imagick php5-imap php5-mcrypt php5-cli less wget mysql-client python git
 RUN mkdir -p /var/log/apache2/test.example.com
 ADD website_conf.py /opt/website_conf.py
 RUN /opt/website_conf.py test.example.com
@@ -17,7 +17,11 @@ WORKDIR /opt/wpcli
 RUN wget https://github.com/wp-cli/wp-cli/releases/download/v0.17.1/wp-cli.phar
 RUN chmod +x wp-cli.phar
 RUN ln -s /opt/wpcli/wp-cli.phar /usr/local/bin/wp
-ADD wp-cli.yml /opt/wpcli/
+RUN mkdir -p /root/.wp-cli/
+ADD wp-cli.yml /root/.wp-cli/config.yml
+
+WORKDIR /opt/
+RUN git clone https://github.com/danielbachhuber/dictator.git
 
 RUN mkdir -p /usr/share/phptop
 ADD https://raw.githubusercontent.com/bearstech/phptop/wp/phptop_hook.php /usr/share/phptop/
