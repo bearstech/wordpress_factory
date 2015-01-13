@@ -91,6 +91,28 @@ db:
            '--title="%s"' % conf['name'], '--admin_email=%s' % conf['admin']['email'],
            '--admin_user=%s' % conf['admin']['user'], '--admin_password=%s' %
            conf['admin']['password'])
+        apache = """
+<VirtualHost *:80>
+    ServerName {name}
+
+    DocumentRoot /var/www/test/root
+
+    <Directory   /var/www/test/root>
+        # Exec .php scripts via FastCGI:
+        Options +ExecCGI
+
+        # Acceptable overrides:
+        # - FileInfo (.htacces-based rewrite rules)
+        # - AuthConfig (.htaccess-based basic auth)
+        AllowOverride All
+    </Directory>
+
+    ErrorLog  /var/log/apache2/{name}/error.log
+    CustomLog /var/log/apache2/{name}/access.log combined
+</VirtualHost>
+""".format(name=conf['url'].split(':')[0])
+        print docker('exec', '-ti', 'wordpress', 'echo', apache, '>', '/etc/apache2/sites-available/website.conf')
+        print docker('restart', 'wordpress')
 
     if arguments['build']:
         if arguments['wordpress']:
