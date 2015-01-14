@@ -23,9 +23,12 @@ Options:
 __version__ = '0.1'
 
 from subprocess import Popen, PIPE
+import os
 import sys
 import yaml
 from cStringIO import StringIO
+
+here = os.path.dirname(__file__)
 
 
 def docker(*args, **opts):
@@ -40,14 +43,17 @@ def docker(*args, **opts):
         raise Exception(e)
     return f
 
+
 def wp(*args):
     args = ['exec', '-ti', 'wordpress', 'wp', '--allow-root'] + list(args)
     return docker(*args)
+
 
 def mysql(*args):
     args = ['exec', '-ti', 'wordpress', 'mysql', '-h', 'db',
             '--password=mypass', '-e'] + list(args)
     return docker(*args)
+
 
 def config():
     with open('wordpress.yml', 'r') as f:
@@ -57,8 +63,6 @@ def config():
 
 def main():
     from docopt import docopt
-    import os
-    import os.path
 
     arguments = docopt(__doc__, version='Wordpress Manager %s' % __version__)
 
@@ -123,9 +127,9 @@ db:
 
     if arguments['build']:
         if arguments['wordpress']:
-            docker('build', '-t', 'wordpress', './docker/wordpress')
+            docker('build', '-t', 'wordpress', os.path.join(here, 'docker', 'wordpress'))
         if arguments['mysql']:
-            docker('build', '-t', 'mysql', './docker/mysql')
+            docker('build', '-t', 'mysql', os.path.join(here, 'docker', 'mysql'))
 
     if arguments['run']:
         if arguments['wordpress']:
