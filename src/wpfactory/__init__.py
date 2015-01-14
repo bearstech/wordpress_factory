@@ -54,7 +54,8 @@ def config():
         conf = yaml.load(f)
     return conf
 
-if __name__ == '__main__':
+
+def main():
     from docopt import docopt
     import os
     import os.path
@@ -165,3 +166,6 @@ db:
     if arguments['wxr']:
         if arguments['export']:
             wp('export', '--dir=/dump/')
+
+if __name__ == '__main__':
+    main()
