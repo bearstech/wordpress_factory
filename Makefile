@@ -5,6 +5,10 @@
 
 clean:
 	rm -f wpfactory.pex
+	rm -rf dist
+
+install: .Python
+	./bin/pip install .
 
 pex: .Python
 	rm ~/.pex/ -rf
