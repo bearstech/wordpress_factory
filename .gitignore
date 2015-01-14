@@ -3,3 +3,8 @@ bin
 lib
 include
 .Python
+pip-selfcheck.json
+wordpress.yml
+dump
+log
+wordpress
