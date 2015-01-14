@@ -1,6 +1,6 @@
 .Python:
 	virtualenv .
-	./bin/pip install pex wheel
+	./bin/pip install --upgrade pex wheel setuptools
 	./bin/pip install -r requierements.txt
 
 clean:
@@ -11,6 +11,6 @@ clean:
 pex: .Python
 	./bin/python setup.py sdist
 	./bin/python setup.py bdist_wheel
-	./bin/pex -r docopts -r pyyaml -e wp_factory:main --repo=dist -r wpfactory -o wpfactory.pex
+	./bin/pex -r docopts -r pyyaml -e wp_factory:main --repo=dist -r wpfactory -o wpfactory.pex -s .
 
 
