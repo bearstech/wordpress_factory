@@ -11,7 +11,7 @@ install: .Python
 	./bin/pip install .
 
 pex: .Python
-	rm ~/.pex/ -rf
-	./bin/pex -r docopt -r pyyaml -r wpfactory -e wpfactory:main -o wpfactory.pex -s .
+	rm -rf ~/.pex/
+	./bin/pex -r docopt -r pyyaml -r wpfactory -e wpfactory:main -o wpfactory -s .
 
 
