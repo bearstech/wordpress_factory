@@ -13,6 +13,26 @@ The is no magic. Wordpress factory is just a wrapper of Docker and wp-cli.
 Data stays on your hard drive, action are done in Docker.
 Your docker if you are using Linux, or inside a virtualbox, if you are using Mac OSX.
 
+Install
+-------
+
+You need python and virtualenv to build the application,
+[docker](https://www.docker.com/) (local or [boot2docker](http://boot2docker.io/)) to use it.
+
+### Local install
+
+    make install
+
+The application is in ./bin/wpfactory
+
+### PEX install
+
+You can build a package, to handle all parts of the install, and distribute it
+
+    make pex
+
+Enjoy your `wpfactory` file.
+
 Demo time
 ---------
 
