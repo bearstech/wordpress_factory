@@ -11,6 +11,6 @@ clean:
 pex: .Python
 	./bin/python setup.py sdist
 	./bin/python setup.py bdist_wheel
-	./bin/pex -r docopt -r pyyaml -e wp_factory:main --repo=dist -r wpfactory -o wpfactory.pex -s .
+	./bin/pex -r docopt -r pyyaml -e wpfactory:main --repo=dist -r wpfactory -o wpfactory.pex -s .
 
 
