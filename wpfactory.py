@@ -6,16 +6,15 @@ Wordpress factory.
 
 Usage:
     wpfactory scaffold
-    wpfactory run
     wpfactory run mysql
     wpfactory run wordpress
     wpfactory config
     wpfactory build mysql
     wpfactory build wordpress
-    wpfactory plugin
     wpfactory update
     wpfactory upgrade
     wpfactory db export
+    wpfactory wxr export
 
 Options:
     --json                         Json output
@@ -30,7 +29,7 @@ from cStringIO import StringIO
 
 
 def docker(*args, **opts):
-    print " ".join(['docker'] + list(args))
+    print "$ ", " ".join(['docker'] + list(args))
     p = Popen(['docker'] + list(args), stdout=PIPE, stderr=PIPE, **opts)
     f = StringIO()
     for line in iter(p.stdout.readline, ''):
@@ -164,3 +163,7 @@ db:
     if arguments['db']:
         if arguments['export']:
             wp('db', 'export', '/dump/dump.sql')
+
+    if arguments['wxr']:
+        if arguments['export']:
+            wp('export', '--dir=/dump/')
