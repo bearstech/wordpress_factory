@@ -65,10 +65,6 @@ def config():
 
 
 def main():
-<<<<<<< HEAD
-    from docopt import docopt
-=======
->>>>>>> Find your path.
 
     arguments = docopt(__doc__, version='Wordpress Manager %s' % __version__)
 
