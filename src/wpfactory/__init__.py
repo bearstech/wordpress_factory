@@ -27,6 +27,9 @@ import os
 import sys
 import yaml
 from cStringIO import StringIO
+from docopt import docopt
+import os
+import os.path
 
 here = os.path.dirname(__file__)
 
@@ -62,7 +65,10 @@ def config():
 
 
 def main():
+<<<<<<< HEAD
     from docopt import docopt
+=======
+>>>>>>> Find your path.
 
     arguments = docopt(__doc__, version='Wordpress Manager %s' % __version__)
 
@@ -126,6 +132,8 @@ db:
         docker('exec', '-ti', 'wordpress', 'kill', '-HUP', '1')
 
     if arguments['build']:
+
+        here = os.path.dirname(__file__)
         if arguments['wordpress']:
             docker('build', '-t', 'wordpress', os.path.join(here, 'docker', 'wordpress'))
         if arguments['mysql']:
