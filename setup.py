@@ -7,6 +7,6 @@ setup(name='wpfactory',
       packages=find_packages('src'),
       package_dir = {'':'src'},
        package_data={
-        'docker': ['wordpress/*', 'mysql/*'],
+        'wpfactory': ['docker/wordpress/*', 'docker/mysql/*'],
        }
       )
