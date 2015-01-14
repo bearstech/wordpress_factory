@@ -112,6 +112,10 @@ db:
                 wp('core', 'language', 'install', language)
                 wp('core', 'language', 'activate', language)
 
+        for plugin in conf['plugin']:
+            wp('plugin', 'install', plugin)
+            wp('plugin', 'activate', plugin)
+
         domain = conf['url'].split(':')[0]
         docker('exec', '-ti', 'wordpress', '/opt/website_conf.py', domain)
         docker('exec', '-ti', 'wordpress', 'kill', '-HUP', '1')
@@ -137,12 +141,6 @@ db:
             docker('run', '--name=mysql', '-d', '-p', '3306', 'mysql')
         else:
             pass
-
-    if arguments['plugin']:
-        conf = config()
-        for plugin in conf['plugin']:
-            wp('plugin', 'install', plugin)
-            wp('plugin', 'activate', plugin)
 
     if arguments['update']:
         wp('cron', 'event', 'run', 'wp_version_check')
