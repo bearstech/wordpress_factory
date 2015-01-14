@@ -119,9 +119,10 @@ db:
                 wp('core', 'language', 'install', language)
                 wp('core', 'language', 'activate', language)
 
-        for plugin in conf['plugin']:
-            wp('plugin', 'install', plugin)
-            wp('plugin', 'activate', plugin)
+        if 'plugin' in conf:
+            for plugin in conf['plugin']:
+                wp('plugin', 'install', plugin)
+                wp('plugin', 'activate', plugin)
 
         domain = conf['url'].split(':')[0]
         docker('exec', '-ti', 'wordpress', '/opt/website_conf.py', domain)
