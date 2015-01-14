@@ -4,7 +4,7 @@
 	./bin/pip install -r requierements.txt
 
 clean:
-	rm -f wpfactory.pex
+	rm -f wpfactory
 	rm -rf dist
 
 install: .Python
