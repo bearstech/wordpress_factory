@@ -59,3 +59,8 @@ Configure your wordpress
 Wordpress is no running, in port 8000, localhost for linux, ask boot2docker on a Mac :
 
     boot2docker ip
+
+Licence
+-------
+
+GPL v3, © 2014 Mathieu Lecarme.
