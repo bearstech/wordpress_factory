@@ -139,6 +139,8 @@ db:
         if arguments['wordpress']:
             if not os.path.exists('log'):
                 os.mkdir('log')
+                if not os.path.exists('log/test.example.com'):
+                    os.mkdir('log/test.example.com')
             if not os.path.exists('dump'):
                 os.mkdir('dump')
             docker('run',  '--name=wordpress', '--hostname=wordpress.example.com', '-d', '-p', '8000:80',
