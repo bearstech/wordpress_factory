@@ -28,7 +28,6 @@ import sys
 import yaml
 from cStringIO import StringIO
 from docopt import docopt
-import os
 import os.path
 
 here = os.path.dirname(__file__)

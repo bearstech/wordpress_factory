@@ -4,14 +4,13 @@ Wordpress factory
 A factory to prepare, deploy, upgrade your Wordpress
 
 No more LAMP, XAMP and other strange tools.
-Your Worpdress runs on a Linux, the same used in production, and you work with your tool, and deploy as usual.
+Your Worpdress runs on a Linux, the same used in production, you work with your tool, and deploy as usual.
 
 The magic
 ---------
 
-The is no magic. Wordpress factory is just a wrapper of Docker and wp-cli.
-Data stays on your hard drive, action are done in Docker.
-Your docker if you are using Linux, or inside a virtualbox, if you are using Mac OSX.
+This is no magic. Wordpress factory is just a wrapper of Docker and wp-cli.
+Data stays on your hard drive, action are done in Docker (or inside a virtualbox, if you are using Mac OSX).
 
 Install
 -------
@@ -27,7 +26,7 @@ The application is in ./bin/wpfactory
 
 ### PEX install
 
-You can build a package, to handle all parts of the install, and distribute it
+You can build a package, to handle all parts of the install, and distribute it.
 
     make pex
 
@@ -56,7 +55,7 @@ Configure your wordpress
 
     ./wpfactory config
 
-Wordpress is no running, in port 8000, localhost for linux, ask boot2docker on a Mac :
+Wordpress is now running, in port 8000, localhost for linux, ask boot2docker on a Mac :
 
     boot2docker ip
 
