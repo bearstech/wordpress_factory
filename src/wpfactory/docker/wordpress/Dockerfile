@@ -7,7 +7,7 @@ RUN apt-get -y install php5-cgi php5-mysql apache2-mpm-worker apache2-suexec \
     php-pear php5-imagick php5-imap php5-mcrypt php5-cli less wget mysql-client python git
 RUN mkdir -p /var/log/apache2/test.example.com
 ADD website_conf.py /opt/website_conf.py
-RUN /opt/website_conf.py test.example.com
+RUN /usr/bin/python /opt/website_conf.py test.example.com
 RUN ln -s /etc/apache2/sites-available/website.conf /etc/apache2/sites-enabled/
 ADD fcgid.conf /etc/apache2/mods-available/
 
