@@ -30,44 +30,38 @@ from cStringIO import StringIO
 from docopt import docopt
 import os.path
 
-here = os.path.dirname(__file__)
 
+class Project(object):
 
-def docker(*args, **opts):
-    print "$ ", " ".join(['docker'] + list(args))
-    p = Popen(['docker'] + list(args), stdout=PIPE, stderr=PIPE, **opts)
-    f = StringIO()
-    for line in iter(p.stdout.readline, ''):
-        sys.stdout.write(line)
-        f.write(line)
-    e = p.stderr.read()
-    if e:
-        raise Exception(e)
-    return f
+    def __init__(self):
+        with open('wordpress.yml', 'r') as f:
+            self.conf = yaml.load(f)
 
+    def docker(self, *args, **opts):
+        print "$ ", " ".join(['docker'] + list(args))
+        p = Popen(['docker'] + list(args), stdout=PIPE, stderr=PIPE, **opts)
+        f = StringIO()
+        for line in iter(p.stdout.readline, ''):
+            sys.stdout.write(line)
+            f.write(line)
+        e = p.stderr.read()
+        if e:
+            raise Exception(e)
+        return f
 
-def wp(*args):
-    args = ['exec', '-ti', 'wordpress', 'wp', '--allow-root'] + list(args)
-    return docker(*args)
+    def wp(self, *args):
+        args = ['exec', '-ti', 'wordpress-%s' % self.conf['project'], 'wp', '--allow-root'] + list(args)
+        return self.docker(*args)
 
-
-def mysql(*args):
-    args = ['exec', '-ti', 'wordpress', 'mysql', '-h', 'db',
-            '--password=mypass', '-e'] + list(args)
-    return docker(*args)
-
-
-def config():
-    with open('wordpress.yml', 'r') as f:
-        conf = yaml.load(f)
-    return conf
+    def mysql(self, *args):
+        args = ['exec', '-ti', 'wordpress-%s' % self.conf['project'], 'mysql', '-h', 'db',
+                '--password=mypass', '-e'] + list(args)
+        return self.docker(*args)
 
 
 def main():
 
     arguments = docopt(__doc__, version='Wordpress Manager %s' % __version__)
-
-    cwd = os.getcwd()
 
     if arguments['scaffold']:
         if not os.path.exists('wordpress'):
@@ -78,7 +72,7 @@ def main():
 
 # Scaffolded Wordpress Factory config file.
 
-
+project: {project}
 url: test.example.lan:8000
 name: Wordpress Factory Test
 language:
@@ -91,51 +85,58 @@ db:
     name: test
     user: test
     pass: password
-""")
+""".format(project=cwd.split('/')[-1]))
+        return
+
+    project = Project()
+    cwd = os.getcwd()
 
     if arguments['config']:
-        conf = config()
-        mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
-        mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
+        conf = project.conf
+        project.mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
+        project.mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
                                                                             password=conf['db']['pass']))
-        mysql("GRANT ALL ON {name}.* TO '{user}'@'%';".format(name=conf['db']['name'],
+        project.mysql("GRANT ALL ON {name}.* TO '{user}'@'%';".format(name=conf['db']['name'],
                                                                      user=conf['db']['user']))
-        mysql("FLUSH PRIVILEGES;")
-        wp('core', 'download')
-        wp('core', 'config', '--skip-check',
+        project.mysql("FLUSH PRIVILEGES;")
+        project.wp('core', 'download')
+        project.wp('core', 'config', '--skip-check',
            '--dbname=%s' % conf['db']['name'],
            '--dbuser=%s' % conf['db']['user'],
            '--dbpass=%s' % conf['db']['pass'],
            '--dbhost=db'
            )
-        wp('core', 'install', '--url=%s' % conf['url'],
+        project.wp('core', 'install', '--url=%s' % conf['url'],
            '--title="%s"' % conf['name'], '--admin_email=%s' % conf['admin']['email'],
            '--admin_user=%s' % conf['admin']['user'], '--admin_password=%s' %
            conf['admin']['password'])
 
         for language in conf['language']:
             if language != 'en':
-                wp('core', 'language', 'install', language)
-                wp('core', 'language', 'activate', language)
+                project.wp('core', 'language', 'install', language)
+                project.wp('core', 'language', 'activate', language)
 
         if 'plugin' in conf:
             for plugin in conf['plugin']:
-                wp('plugin', 'install', plugin)
-                wp('plugin', 'activate', plugin)
+                project.wp('plugin', 'install', plugin)
+                project.wp('plugin', 'activate', plugin)
 
         domain = conf['url'].split(':')[0]
-        docker('exec', '-ti', 'wordpress', '/opt/website_conf.py', domain)
-        docker('exec', '-ti', 'wordpress', 'kill', '-HUP', '1')
+        p = project.conf['project']
+        project.docker('exec', '-ti', 'wordpress-%s' % p, '/opt/website_conf.py', domain)
+        project.docker('exec', '-ti', 'wordpress-%s' % p, 'kill', '-HUP', '1')
 
     if arguments['build']:
 
         here = os.path.dirname(__file__)
         if arguments['wordpress']:
-            docker('build', '-t', 'wordpress', os.path.join(here, 'docker', 'wordpress'))
+            project.docker('build', '-t', 'wordpress',
+                           os.path.join(here, 'docker', 'wordpress'))
         if arguments['mysql']:
-            docker('build', '-t', 'mysql', os.path.join(here, 'docker', 'mysql'))
+            project.docker('build', '-t', 'mysql', os.path.join(here, 'docker', 'mysql'))
 
     if arguments['run']:
+        p = project.conf['project']
         if arguments['wordpress']:
             if not os.path.exists('log'):
                 os.mkdir('log')
@@ -143,39 +144,43 @@ db:
                     os.mkdir('log/test.example.com')
             if not os.path.exists('dump'):
                 os.mkdir('dump')
-            docker('run',  '--name=wordpress', '--hostname=wordpress.example.com', '-d', '-p', '8000:80',
-                   '--volume' , '%s/wordpress:/var/www/test/root' % cwd,
-                   '--volume', '%s/log:/var/log/apache2/' % cwd,
-                   '--volume', '%s/dump:/dump/' % cwd,
-                         '--link=mysql:db', 'wordpress')
+            project.docker('run', '--name=wordpress-%s' % p,
+                           '-d', '-p', '8000:80',
+                           '--hostname=wordpress.example.com',
+                           '--volume' , '%s/wordpress:/var/www/test/root' % cwd,
+                           '--volume', '%s/log:/var/log/apache2/' % cwd,
+                           '--volume', '%s/dump:/dump/' % cwd,
+                           '--link=mysql-%s:db' % p, 'wordpress')
         elif arguments['mysql']:
-            docker('run', '--name=mysql', '-d', '-p', '3306', 'mysql')
+            project.docker('run', '--name=mysql-%s' % p, '-d',
+                           '-p', '3306', 'mysql')
         else:
+            # [FIXME] build both
             pass
 
     if arguments['update']:
-        wp('cron', 'event', 'run', 'wp_version_check')
-        wp('cron', 'event', 'run', 'wp_update_themes')
-        wp('cron', 'event', 'run', 'wp_update_plugins')
-        wp('cron', 'event', 'run', 'wp_maybe_auto_update')
-        wp('plugin', 'list', '--fields=name,version,update_version')
-        wp('theme', 'list', '--fields=name,version,update_version')
-        wp('core', 'check-update')
+        project.wp('cron', 'event', 'run', 'wp_version_check')
+        project.wp('cron', 'event', 'run', 'wp_update_themes')
+        project.wp('cron', 'event', 'run', 'wp_update_plugins')
+        project.wp('cron', 'event', 'run', 'wp_maybe_auto_update')
+        project.wp('plugin', 'list', '--fields=name,version,update_version')
+        project.wp('theme', 'list', '--fields=name,version,update_version')
+        project.wp('core', 'check-update')
 
     if arguments['upgrade']:
-        wp('plugin', 'update', '--all')
-        wp('theme', 'update', '--all')
-        wp('core', 'verify-checksums')
-        wp('core', 'update')
-        wp('core', 'update-db')
+        project.wp('plugin', 'update', '--all')
+        project.wp('theme', 'update', '--all')
+        project.wp('core', 'verify-checksums')
+        project.wp('core', 'update')
+        project.wp('core', 'update-db')
 
     if arguments['db']:
         if arguments['export']:
-            wp('db', 'export', '/dump/dump.sql')
+            project.wp('db', 'export', '/dump/dump.sql')
 
     if arguments['wxr']:
         if arguments['export']:
-            wp('export', '--dir=/dump/')
+            project.wp('export', '--dir=/dump/')
 
 if __name__ == '__main__':
     main()
