@@ -63,6 +63,8 @@ def main():
 
     arguments = docopt(__doc__, version='Wordpress Manager %s' % __version__)
 
+    cwd = os.getcwd()
+
     if arguments['scaffold']:
         if not os.path.exists('wordpress'):
             os.makedirs('wordpress')
@@ -89,7 +91,6 @@ db:
         return
 
     project = Project()
-    cwd = os.getcwd()
 
     if arguments['config']:
         conf = project.conf
