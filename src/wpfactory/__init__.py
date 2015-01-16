@@ -66,6 +66,8 @@ def main():
     cwd = os.getcwd()
 
     if arguments['scaffold']:
+        # [FIXME] boot2docker can share folder on /tmp/ path
+
         if not os.path.exists('wordpress'):
             os.makedirs('wordpress')
         if not os.path.exists('wordpress.yml'):
