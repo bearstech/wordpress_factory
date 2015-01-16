@@ -8,7 +8,7 @@ clean:
 	rm -rf dist
 
 install: .Python
-	./bin/pip install .
+	./bin/python setup.py install
 
 pex: .Python
 	rm -rf ~/.pex/
