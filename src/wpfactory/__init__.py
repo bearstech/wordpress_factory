@@ -6,9 +6,11 @@ Wordpress factory.
 
 Usage:
     wpfactory scaffold
+    wpfactory run
     wpfactory run mysql
     wpfactory run wordpress
     wpfactory config
+    wpfactory build
     wpfactory build mysql
     wpfactory build wordpress
     wpfactory update
@@ -132,15 +134,23 @@ db:
     if arguments['build']:
 
         here = os.path.dirname(__file__)
-        if arguments['wordpress']:
+        def build_wordpress():
             project.docker('build', '-t', 'wordpress',
                            os.path.join(here, 'docker', 'wordpress'))
-        if arguments['mysql']:
+        def build_mysql():
             project.docker('build', '-t', 'mysql', os.path.join(here, 'docker', 'mysql'))
+
+        if arguments['wordpress']:
+            build_wordpress()
+        elif arguments['mysql']:
+            build_mysql()
+        else:
+            build_mysql()
+            build_wordpress()
 
     if arguments['run']:
         p = project.conf['project']
-        if arguments['wordpress']:
+        def run_wordpress():
             if not os.path.exists('log'):
                 os.mkdir('log')
                 if not os.path.exists('log/test.example.com'):
@@ -154,12 +164,18 @@ db:
                            '--volume', '%s/log:/var/log/apache2/' % cwd,
                            '--volume', '%s/dump:/dump/' % cwd,
                            '--link=mysql-%s:db' % p, 'wordpress')
-        elif arguments['mysql']:
+
+        def run_mysql():
             project.docker('run', '--name=mysql-%s' % p, '-d',
                            '-p', '3306', 'mysql')
+
+        if arguments['wordpress']:
+            run_wordpress()
+        elif arguments['mysql']:
+            run_mysql()
         else:
-            # [FIXME] build both
-            pass
+            run_mysql()
+            run_wordpress()
 
     if arguments['update']:
         project.wp('cron', 'event', 'run', 'wp_version_check')
