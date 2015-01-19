@@ -15,11 +15,12 @@ Usage:
     wpfactory build wordpress
     wpfactory update
     wpfactory upgrade
-    wpfactory db export
+    wpfactory db export [--no-wxr]
     wpfactory wxr export
 
 Options:
     --json                         Json output
+    --no-wxr                       Export all except WXR stuff
 """
 
 __version__ = '0.1'
@@ -49,6 +50,7 @@ class Project(object):
         e = p.stderr.read()
         if e:
             raise Exception(e)
+        f.seek(0)
         return f
 
     def wp(self, *args):
@@ -195,7 +197,17 @@ db:
 
     if arguments['db']:
         if arguments['export']:
-            project.wp('db', 'export', '/dump/dump.sql')
+            if arguments['--no-wxr']:
+                tables = set([a[:-2] for a in
+                          project.wp('db', 'tables', '--quiet').readlines()])
+                tables -= {'wp_users', 'wp_usermeta', 'wp_posts', 'wp_comments',
+                          'wp_links', 'wp_postmeta', 'wp_terms',
+                          'wp_term_taxonomy', 'wp_term_relationships',
+                          'wp_commentmeta'}
+                project.wp('db', 'export', '/dump/dump.sql',
+                           '--tables=%s' % ','.join(tables))
+            else:
+                project.wp('db', 'export', '/dump/dump.sql')
 
     if arguments['wxr']:
         if arguments['export']:
