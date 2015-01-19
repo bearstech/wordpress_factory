@@ -18,6 +18,7 @@ Usage:
     wpfactory db export [--contents|--no-contents|--options]
     wpfactory wxr export
     wpfactory dictator export
+    wpfactory home
 
 Options:
     --json                         Json output
@@ -33,6 +34,7 @@ import yaml
 from cStringIO import StringIO
 from docopt import docopt
 import os.path
+import webbrowser
 
 
 class Project(object):
@@ -236,6 +238,9 @@ db:
         if arguments['export']:
             project.wp('dictator', 'export', 'site', '/dump/dictator-site.yml',
                        '--force')
+
+    if arguments['home']:
+        webbrowser.open(project.conf['url'])
 
 if __name__ == '__main__':
     main()
