@@ -15,7 +15,7 @@ Usage:
     wpfactory build wordpress
     wpfactory update
     wpfactory upgrade
-    wpfactory db export [--no-wxr]
+    wpfactory db export [--contents|--no-contents|--options]
     wpfactory wxr export
     wpfactory dictator export
 
@@ -194,14 +194,21 @@ db:
 
     if arguments['db']:
         if arguments['export']:
-            if arguments['--no-wxr']:
+            contents_table = {'wp_users', 'wp_usermeta', 'wp_posts',
+                              'wp_comments', 'wp_links', 'wp_postmeta',
+                              'wp_terms', 'wp_term_taxonomy',
+                              'wp_term_relationships', 'wp_commentmeta'}
+            if arguments['--contents']:
+                project.wp('db', 'export', '/dump/dump-contents.sql',
+                           '--tables=%s' % ','.join(contents_table))
+            elif arguments['--options']:
+                project.wp('db', 'export', '/dump/dump-options.sql',
+                           '--tables=wp_options')
+            elif arguments['--no-contents']:
                 tables = set([a[:-2] for a in
                           project.wp('db', 'tables', '--quiet').readlines()])
-                tables -= {'wp_users', 'wp_usermeta', 'wp_posts', 'wp_comments',
-                          'wp_links', 'wp_postmeta', 'wp_terms',
-                          'wp_term_taxonomy', 'wp_term_relationships',
-                          'wp_commentmeta'}
-                project.wp('db', 'export', '/dump/dump.sql',
+                tables -= contents_table
+                project.wp('db', 'export', '/dump/dump-no-contents.sql',
                            '--tables=%s' % ','.join(tables))
             else:
                 project.wp('db', 'export', '/dump/dump.sql')
