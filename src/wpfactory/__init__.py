@@ -129,9 +129,7 @@ db:
                 project.wp('plugin', 'install', plugin)
                 project.wp('plugin', 'activate', plugin)
 
-        domain = conf['url'].split(':')[0]
         p = project.conf['project']
-        project.docker('exec', '-ti', 'wordpress-%s' % p, '/opt/website_conf.py', domain)
         project.docker('exec', '-ti', 'wordpress-%s' % p, 'kill', '-HUP', '1')
 
     if arguments['build']:
@@ -156,8 +154,6 @@ db:
         def run_wordpress():
             if not os.path.exists('log'):
                 os.mkdir('log')
-                if not os.path.exists('log/test.example.com'):
-                    os.mkdir('log/test.example.com')
             if not os.path.exists('dump'):
                 os.mkdir('dump')
             project.docker('run', '--name=wordpress-%s' % p,
