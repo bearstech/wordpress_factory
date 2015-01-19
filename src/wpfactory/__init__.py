@@ -17,6 +17,7 @@ Usage:
     wpfactory upgrade
     wpfactory db export [--no-wxr]
     wpfactory wxr export
+    wpfactory dictator export
 
 Options:
     --json                         Json output
@@ -212,6 +213,11 @@ db:
     if arguments['wxr']:
         if arguments['export']:
             project.wp('export', '--dir=/dump/')
+
+    if arguments['dictator']:
+        if arguments['export']:
+            project.wp('dictator', 'export', 'site', '/dump/dictator-site.yml',
+                       '--force')
 
 if __name__ == '__main__':
     main()
