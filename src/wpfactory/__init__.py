@@ -64,6 +64,13 @@ class Project(object):
         return self.docker(*args)
 
 
+def guess_docker_host():
+        d = os.getenv('DOCKER_HOST')
+        if d:
+            return d.split('//')[-1].split(':')[0]
+        else:
+            return "localhost"
+
 def main():
 
     arguments = docopt(__doc__, version='Wordpress Manager %s' % __version__)
@@ -82,7 +89,7 @@ def main():
 # Scaffolded Wordpress Factory config file.
 
 project: {project}
-url: test.example.lan:8000
+url: {host}:8000
 name: Wordpress Factory Test
 language:
     - en
@@ -94,7 +101,8 @@ db:
     name: test
     user: test
     pass: password
-""".format(project=cwd.split('/')[-1]))
+""".format(project=cwd.split('/')[-1]),
+           host=guess_docker_host())
         return
 
     project = Project()
@@ -118,6 +126,8 @@ db:
            '--title="%s"' % conf['name'], '--admin_email=%s' % conf['admin']['email'],
            '--admin_user=%s' % conf['admin']['user'], '--admin_password=%s' %
            conf['admin']['password'])
+
+        project.wp('option', 'set', 'siteurl', "http://%s" % conf['url'])
 
         for language in conf['language']:
             if language != 'en':
