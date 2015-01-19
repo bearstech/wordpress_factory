@@ -12,7 +12,7 @@ ADD fcgid.conf /etc/apache2/mods-available/
 RUN mkdir -p /opt/wpcli
 WORKDIR /opt/wpcli
 # too many redirection for an ADD
-RUN wget https://github.com/wp-cli/wp-cli/releases/download/v0.17.1/wp-cli.phar
+RUN wget https://github.com/wp-cli/wp-cli/releases/download/v0.18/wp-cli.phar
 RUN chmod +x wp-cli.phar
 RUN ln -s /opt/wpcli/wp-cli.phar /usr/local/bin/wp
 RUN mkdir -p /root/.wp-cli/
