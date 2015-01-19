@@ -12,7 +12,7 @@ Usage:
     wpfactory config
     wpfactory build
     wpfactory build mysql
-    wpfactory build wordpress
+    wpfactory build wordpress [--no-cache]
     wpfactory update
     wpfactory upgrade
     wpfactory db export [--contents|--no-contents|--options]
@@ -136,10 +136,15 @@ db:
 
         here = os.path.dirname(__file__)
         def build_wordpress():
-            project.docker('build', '-t', 'wordpress',
-                           os.path.join(here, 'docker', 'wordpress'))
+            args = ['build']
+            if arguments['--no-cache']:
+                args.append('--no-cache')
+            args += ['-t', 'wordpress', os.path.join(here, 'docker',
+                                                     'wordpress')]
+            project.docker(*args)
         def build_mysql():
-            project.docker('build', '-t', 'mysql', os.path.join(here, 'docker', 'mysql'))
+            project.docker('build', '-t', 'mysql', os.path.join(here, 'docker',
+                                                                'mysql'))
 
         if arguments['wordpress']:
             build_wordpress()
