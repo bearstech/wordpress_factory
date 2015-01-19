@@ -4,7 +4,8 @@ RUN apt-get update
 RUN apt-get -y upgrade
 RUN apt-get -y install php5-cgi php5-mysql apache2-mpm-worker apache2-suexec \
     libapache2-mod-fcgid php-apc php5-memcached php5-curl php5-gd php5-intl \
-    php-pear php5-imagick php5-imap php5-mcrypt php5-cli less wget mysql-client python git
+    php-pear php5-imagick php5-imap php5-mcrypt php5-cli less wget mysql-client\
+    sendmail curl python git
 ADD website.conf /etc/apache2/sites-available/default
 ADD fcgid.conf /etc/apache2/mods-available/
 
