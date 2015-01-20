@@ -179,6 +179,8 @@ db:
 
         p = conf['project']
         project.docker('exec', '-ti', 'wordpress-%s' % p, 'kill', '-HUP', '1')
+        url = "http://"+project.conf['url']+"/"
+        puts(colored.green("Wordpress ready : You can now go to : %s" % url))
 
     elif arguments['build']:
 
@@ -240,7 +242,7 @@ db:
             project.docker('start', 'mysql-%s' % p)
         if not 'wordpress' in services:
             project.docker('start', 'wordpress-%s' % p)
-        print "All services are started."
+        url = "http://"+project.conf['url']+"/"
 
     elif arguments['stop']:
         p = project.conf['project']
@@ -294,10 +296,12 @@ db:
                        '--force')
 
     elif arguments['home']:
-        webbrowser.open(project.conf['url'])
+        url = "http://"+project.conf['url']+"/"
+        print "Opening : %s" % url
+        webbrowser.open(url)
 
     else:
-        print "Unknow command"
+        print "Unknown command"
         print __doc__
         sys.exit(1)
 
