@@ -37,9 +37,15 @@ import os.path
 import webbrowser
 
 
+def error(msg):
+    print "\n[Error] %s" % msg
+    sys.exit(1)
+
 class Project(object):
 
     def __init__(self):
+        if not os.path.exists('wordpress.yml'):
+            error("Can't find wordpress.yml file, use:\n$ wpfactory scaffold\nand edit it." )
         with open('wordpress.yml', 'r') as f:
             self.conf = yaml.load(f)
 
@@ -52,6 +58,8 @@ class Project(object):
             f.write(line)
         e = p.stderr.read()
         if e:
+            if e.find('level="fatal" msg="An error occurred trying to connect:') != -1:
+                error('Docker daemon is not running.')
             raise Exception(e)
         f.seek(0)
         return f
