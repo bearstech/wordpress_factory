@@ -6,23 +6,21 @@ Wordpress factory.
 
 Usage:
     wpfactory scaffold
-    wpfactory run
-    wpfactory run mysql
-    wpfactory run wordpress
+    wpfactory run [mysql|wordpress]
     wpfactory config
-    wpfactory build
-    wpfactory build mysql
-    wpfactory build wordpress [--no-cache]
+    wpfactory build [mysql|wordpress [--no-cache]]
     wpfactory update
     wpfactory upgrade
     wpfactory db export [--contents|--no-contents|--options]
     wpfactory wxr export
     wpfactory dictator export
     wpfactory home
+    wpfactory
 
 Options:
-    --json                         Json output
-    --no-wxr                       Export all except WXR stuff
+    -h --help   Show this screen.
+    --json      Json output
+    --no-wxr    Export all except WXR stuff
 """
 
 __version__ = '0.1'
@@ -120,9 +118,8 @@ db:
            host=guess_docker_host())
         return
 
-    project = Project()
-
-    if arguments['config']:
+    elif arguments['config']:
+        project = Project()
         conf = project.conf
         project.mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
         project.mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
@@ -157,7 +154,8 @@ db:
         p = project.conf['project']
         project.docker('exec', '-ti', 'wordpress-%s' % p, 'kill', '-HUP', '1')
 
-    if arguments['build']:
+    elif arguments['build']:
+        project = Project()
 
         here = os.path.dirname(__file__)
         def build_wordpress():
@@ -179,7 +177,8 @@ db:
             build_mysql()
             build_wordpress()
 
-    if arguments['run']:
+    elif arguments['run']:
+        project = Project()
         p = project.conf['project']
         def run_wordpress():
             if not os.path.exists('log'):
@@ -206,7 +205,8 @@ db:
             run_mysql()
             run_wordpress()
 
-    if arguments['update']:
+    elif arguments['update']:
+        project = Project()
         project.wp('cron', 'event', 'run', 'wp_version_check')
         project.wp('cron', 'event', 'run', 'wp_update_themes')
         project.wp('cron', 'event', 'run', 'wp_update_plugins')
@@ -215,14 +215,16 @@ db:
         project.wp('theme', 'list', '--fields=name,version,update_version')
         project.wp('core', 'check-update')
 
-    if arguments['upgrade']:
+    elif arguments['upgrade']:
+        project = Project()
         project.wp('plugin', 'update', '--all')
         project.wp('theme', 'update', '--all')
         project.wp('core', 'verify-checksums')
         project.wp('core', 'update')
         project.wp('core', 'update-db')
 
-    if arguments['db']:
+    elif arguments['db']:
+        project = Project()
         if arguments['export']:
             contents_table = {'wp_users', 'wp_usermeta', 'wp_posts',
                               'wp_comments', 'wp_links', 'wp_postmeta',
@@ -243,17 +245,22 @@ db:
             else:
                 project.wp('db', 'export', '/dump/dump.sql')
 
-    if arguments['wxr']:
+    elif arguments['wxr']:
         if arguments['export']:
             project.wp('export', '--dir=/dump/')
 
-    if arguments['dictator']:
+    elif arguments['dictator']:
         if arguments['export']:
             project.wp('dictator', 'export', 'site', '/dump/dictator-site.yml',
                        '--force')
 
-    if arguments['home']:
+    elif arguments['home']:
         webbrowser.open(project.conf['url'])
+
+    else:
+        print "Unknow command"
+        print __doc__
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
