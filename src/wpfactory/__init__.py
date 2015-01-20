@@ -28,6 +28,7 @@ Options:
 __version__ = '0.1'
 
 from subprocess import Popen, PIPE
+from clint.textui import colored, puts
 import os
 import sys
 import yaml
@@ -55,7 +56,8 @@ class Project(object):
             self.conf = yaml.load(f)
 
     def docker(self, *args, **opts):
-        print "$ ", " ".join(['docker'] + list(args))
+        cmdline = "$ " + " ".join(['docker'] + list(args))
+        puts(colored.yellow(cmdline))
         p = Popen(['docker'] + list(args), stdout=PIPE, stderr=PIPE, **opts)
         f = StringIO()
         for line in iter(p.stdout.readline, ''):
