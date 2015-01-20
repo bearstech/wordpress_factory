@@ -35,10 +35,12 @@ from cStringIO import StringIO
 from docopt import docopt
 import os.path
 import webbrowser
+import re
 
+DOCKER_ERROR = re.compile(r'time="(.*?)" level="(.*?)" msg="(.*?)"')
 
-def error(msg):
-    print "\n[Error] %s" % msg
+def error(msg, source=''):
+    print "\n[Error {source}] {msg}".format(source=source, msg=msg)
     sys.exit(1)
 
 class Project(object):
@@ -60,6 +62,9 @@ class Project(object):
         if e:
             if e.find('level="fatal" msg="An error occurred trying to connect:') != -1:
                 error('Docker daemon is not running.')
+            m = DOCKER_ERROR.match(e)
+            if m:
+                error(m.group(3), "Docker %s" % m.group(2))
             raise Exception(e)
         f.seek(0)
         return f
