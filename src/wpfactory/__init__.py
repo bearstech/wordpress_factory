@@ -114,7 +114,7 @@ db:
     name: test
     user: test
     pass: password
-""".format(project=cwd.split('/')[-1]),
+""".format(project=os.path.basename(cwd)),
            host=guess_docker_host())
         return
 
