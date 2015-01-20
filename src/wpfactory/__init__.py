@@ -80,6 +80,16 @@ class Project(object):
                 '--password=mypass', '-e'] + list(args)
         return self.docker(*args)
 
+    def services(self):
+        "Started services."
+        s = set()
+        project = self.conf['project']
+        for service in [SPACES.split(ps)[:-1][-1] for ps in
+                        self.docker('ps').readlines()[1:]]:
+            if service.split('-')[-1] == project:
+                s.add(service[:-(len(project)+1)])
+        return s
+
 
 def guess_docker_host():
         d = os.environ.get('DOCKER_HOST', None)
@@ -214,13 +224,13 @@ db:
             run_wordpress()
 
     elif arguments['start']:
-        names = set([SPACES.split(ps)[:-1][-1] for ps in project.docker('ps').readlines()[1:]])
-        m = "mysql-%s" % project.conf['project']
-        if not m in names:
-            project.docker('start', m)
-        w = "wordpress-%s" % project.conf['project']
-        if not w in names:
-            project.docker('start', w)
+        p = project.conf['project']
+        services = project.services()
+        print services
+        if not 'mysql' in services:
+            project.docker('start', 'mysql-%s' % p)
+        if not 'wordpress' in services:
+            project.docker('start', 'wordpress-%s' % p)
         print "All services are started."
 
     elif arguments['update']:
