@@ -6,7 +6,7 @@ Wordpress factory.
 
 Usage:
     wpfactory scaffold
-    wpfactory build [mysql|wordpress [--no-cache]]
+    wpfactory build [mysql|wordpress] [--no-cache]
     wpfactory run [mysql|wordpress]
     wpfactory start
     wpfactory stop
@@ -189,8 +189,11 @@ db:
                                                      'wordpress')]
             project.docker(*args)
         def build_mysql():
-            project.docker('build', '-t', 'mysql', os.path.join(here, 'docker',
-                                                                'mysql'))
+            args = ['build']
+            if arguments['--no-cache']:
+                args.append('--no-cache')
+            args += ['-t', 'mysql', os.path.join(here, 'docker', 'mysql')]
+            project.docker(*args)
 
         if arguments['wordpress']:
             build_wordpress()
