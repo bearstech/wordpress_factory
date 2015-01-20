@@ -6,7 +6,7 @@ Wordpress factory.
 
 Usage:
     wpfactory scaffold
-    wpfactory build [mysql|wordpress] [--no-cache]
+    wpfactory build [mysql|wordpress|sitespeed] [--no-cache]
     wpfactory run [mysql|wordpress]
     wpfactory start
     wpfactory stop
@@ -17,6 +17,7 @@ Usage:
     wpfactory wxr export
     wpfactory dictator export
     wpfactory home
+    wpfactory sitespeed
     wpfactory
 
 Options:
@@ -98,13 +99,13 @@ class Project(object):
                 s.add(service[:-(len(project)+1)])
         return s
 
-
 def guess_docker_host():
         d = os.environ.get('DOCKER_HOST', None)
         if d:
             return d.split('//')[-1].split(':')[0]
         else:
             return "localhost"
+
 
 def main():
 
@@ -199,13 +200,24 @@ db:
             args += ['-t', 'mysql', os.path.join(here, 'docker', 'mysql')]
             project.docker(*args)
 
+        def build_sitespeed():
+            args = ['build']
+            if arguments['--no-cache']:
+                args.append('--no-cache')
+            args += ['-t', 'sitespeed', os.path.join(here, 'docker',
+                                                     'sitespeed.io')]
+            project.docker(*args)
+
         if arguments['wordpress']:
             build_wordpress()
         elif arguments['mysql']:
             build_mysql()
+        elif arguments['sitespeed']:
+            build_sitespeed()
         else:
             build_mysql()
             build_wordpress()
+            build_sitespeed()
 
     elif arguments['run']:
         p = project.conf['project']
@@ -299,6 +311,13 @@ db:
         url = "http://"+project.conf['url']+"/"
         print "Opening : %s" % url
         webbrowser.open(url)
+
+    elif arguments['sitespeed']:
+        if not os.path.exists('sitespeed.io'):
+            os.mkdir('sitespeed.io')
+        project.docker('run', '--rm', '--volume', '%s/sitespeed.io:/result' % cwd, 'sitespeed', 'sitespeed.io',
+                       '--screenshot', '--url', 'http://%s' % project.conf['url'],
+                       '--resultBaseDir', '/result')
 
     else:
         print "Unknown command"
