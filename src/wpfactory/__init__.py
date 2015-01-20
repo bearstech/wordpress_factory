@@ -51,6 +51,7 @@ class Project(object):
 
     def __init__(self):
         if not os.path.exists('wordpress.yml'):
+            print __doc__
             error("Can't find wordpress.yml file, use:\n$ wpfactory scaffold\nand edit it." )
         with open('wordpress.yml', 'r') as f:
             self.conf = yaml.load(f)
@@ -174,11 +175,10 @@ db:
                 project.wp('plugin', 'install', plugin)
                 project.wp('plugin', 'activate', plugin)
 
-        p = project.conf['project']
+        p = conf['project']
         project.docker('exec', '-ti', 'wordpress-%s' % p, 'kill', '-HUP', '1')
 
     elif arguments['build']:
-        project = Project()
 
         here = os.path.dirname(__file__)
         def build_wordpress():
@@ -201,7 +201,6 @@ db:
             build_wordpress()
 
     elif arguments['run']:
-        project = Project()
         p = project.conf['project']
         def run_wordpress():
             if not os.path.exists('log'):
@@ -244,7 +243,6 @@ db:
             project.docker('stop', '-'.join([service, p]))
 
     elif arguments['update']:
-        project = Project()
         project.wp('cron', 'event', 'run', 'wp_version_check')
         project.wp('cron', 'event', 'run', 'wp_update_themes')
         project.wp('cron', 'event', 'run', 'wp_update_plugins')
@@ -254,7 +252,6 @@ db:
         project.wp('core', 'check-update')
 
     elif arguments['upgrade']:
-        project = Project()
         project.wp('plugin', 'update', '--all')
         project.wp('theme', 'update', '--all')
         project.wp('core', 'verify-checksums')
@@ -262,7 +259,6 @@ db:
         project.wp('core', 'update-db')
 
     elif arguments['db']:
-        project = Project()
         if arguments['export']:
             contents_table = {'wp_users', 'wp_usermeta', 'wp_posts',
                               'wp_comments', 'wp_links', 'wp_postmeta',
