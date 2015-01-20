@@ -78,7 +78,9 @@ class Project(object):
         return f
 
     def wp(self, *args):
-        args = ['exec', '-ti', 'wordpress-%s' % self.conf['project'], 'wp', '--allow-root'] + list(args)
+        args = ['exec', '-ti', 'wordpress-%s' % self.conf['project'],
+                'wp', '--allow-root', '--path=/var/www/test/root',
+                '--require=/opt/dictator/dictator.php'] + list(args)
         return self.docker(*args)
 
     def mysql(self, *args):
