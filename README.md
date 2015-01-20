@@ -43,8 +43,7 @@ Modify the wordpress.yml file
 
 Prepare your containers
 
-    ./wpfactory build wordpress
-    ./wpfactory build mysql
+    ./wpfactory build
 
 Start services
 
@@ -57,7 +56,7 @@ Configure your wordpress
 
 Wordpress is now running, in port 8000, localhost for linux, ask boot2docker on a Mac :
 
-    boot2docker ip
+    ./wpfactory home
 
 Licence
 -------
