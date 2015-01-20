@@ -8,6 +8,7 @@ Usage:
     wpfactory scaffold
     wpfactory build [mysql|wordpress [--no-cache]]
     wpfactory run [mysql|wordpress]
+    wpfactory start
     wpfactory config
     wpfactory update
     wpfactory upgrade
@@ -36,10 +37,13 @@ import webbrowser
 import re
 
 DOCKER_ERROR = re.compile(r'time="(.*?)" level="(.*?)" msg="(.*?)"')
+SPACES = re.compile(r'\s\s+')
+
 
 def error(msg, source=''):
     print "\n[Error {source}] {msg}".format(source=source, msg=msg)
     sys.exit(1)
+
 
 class Project(object):
 
@@ -120,8 +124,10 @@ db:
                 print "Just scaffolded the wordpress.yml file, edit it."
         return
 
-    elif arguments['config']:
+    else:
         project = Project()
+
+    if arguments['config']:
         conf = project.conf
         project.mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
         project.mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
@@ -206,6 +212,16 @@ db:
         else:
             run_mysql()
             run_wordpress()
+
+    elif arguments['start']:
+        names = set([SPACES.split(ps)[:-1][-1] for ps in project.docker('ps').readlines()[1:]])
+        m = "mysql-%s" % project.conf['project']
+        if not m in names:
+            project.docker('start', m)
+        w = "wordpress-%s" % project.conf['project']
+        if not w in names:
+            project.docker('start', w)
+        print "All services are started."
 
     elif arguments['update']:
         project = Project()
