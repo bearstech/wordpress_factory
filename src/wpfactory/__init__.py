@@ -78,7 +78,7 @@ class Project(object):
 
 
 def guess_docker_host():
-        d = os.getenv('DOCKER_HOST')
+        d = os.environ.get('DOCKER_HOST', None)
         if d:
             return d.split('//')[-1].split(':')[0]
         else:
@@ -95,14 +95,16 @@ def main():
 
         if not os.path.exists('wordpress'):
             os.makedirs('wordpress')
-        if not os.path.exists('wordpress.yml'):
+        if os.path.exists('wordpress.yml'):
+            error("wordpress.yml already exist.")
+        else:
             with open('wordpress.yml', 'w') as f:
                 f.write("""---
 
 # Scaffolded Wordpress Factory config file.
 
 project: {project}
-url: {host}:8000
+url: {docker_host}:8000
 name: Wordpress Factory Test
 language:
     - en
@@ -114,8 +116,13 @@ db:
     name: test
     user: test
     pass: password
+<<<<<<< HEAD
 """.format(project=os.path.basename(cwd)),
            host=guess_docker_host())
+=======
+""".format(project=cwd.split('/')[-1], docker_host=guess_docker_host()))
+                print "Just scaffolded the wordpress.yml file, edit it."
+>>>>>>> Fix: wordpress.yml scaffolding.
         return
 
     elif arguments['config']:
