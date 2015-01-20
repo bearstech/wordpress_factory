@@ -9,6 +9,7 @@ Usage:
     wpfactory build [mysql|wordpress [--no-cache]]
     wpfactory run [mysql|wordpress]
     wpfactory start
+    wpfactory stop
     wpfactory config
     wpfactory update
     wpfactory upgrade
@@ -232,6 +233,11 @@ db:
         if not 'wordpress' in services:
             project.docker('start', 'wordpress-%s' % p)
         print "All services are started."
+
+    elif arguments['stop']:
+        p = project.conf['project']
+        for service in project.services():
+            project.docker('stop', '-'.join([service, p]))
 
     elif arguments['update']:
         project = Project()
