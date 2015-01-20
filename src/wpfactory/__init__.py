@@ -61,8 +61,10 @@ class Project(object):
         for line in iter(p.stdout.readline, ''):
             sys.stdout.write(line)
             f.write(line)
-        e = p.stderr.read()
-        if e:
+        p.wait()
+        error = p.returncode != 0
+        if error:
+            e = p.stderr.read()
             if e.find('level="fatal" msg="An error occurred trying to connect:') != -1:
                 error('Docker daemon is not running.')
             m = DOCKER_ERROR.match(e)
