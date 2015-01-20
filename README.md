@@ -35,16 +35,16 @@ Enjoy your `wpfactory` file.
 Demo time
 ---------
 
-Prepare your containers
-
-    ./wpfactory build wordpress
-    ./wpfactory build mysql
-
 Scaffolding
 
     ./wpfactory scaffold
 
 Modify the wordpress.yml file
+
+Prepare your containers
+
+    ./wpfactory build wordpress
+    ./wpfactory build mysql
 
 Start services
 
