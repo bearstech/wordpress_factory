@@ -12,5 +12,10 @@ setup(
     },
     entry_points={
         'console_scripts': ['wpfactory=wpfactory:main']
-    }
+    },
+    install_requires=[
+        'docopt',
+        'pyyaml',
+        'clint'
+    ]
 )
