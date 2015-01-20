@@ -1,7 +1,6 @@
 .Python:
 	virtualenv .
 	./bin/pip install --upgrade pex wheel setuptools
-	./bin/pip install -r requirements.txt
 
 clean:
 	rm -f wpfactory
