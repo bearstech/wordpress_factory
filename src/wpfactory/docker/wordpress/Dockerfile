@@ -26,6 +26,7 @@ ADD https://raw.githubusercontent.com/bearstech/phptop/wp/phptop_hook.php /usr/s
 RUN chmod +r /usr/share/phptop/phptop_hook.php
 ADD https://raw.githubusercontent.com/bearstech/phptop/master/debian/phptop.ini etc/php5/conf.d/
 RUN chmod +r /etc/php5/conf.d/phptop.ini
+WORKDIR /root
 
 EXPOSE 80
 
