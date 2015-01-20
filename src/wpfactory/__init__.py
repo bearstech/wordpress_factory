@@ -6,9 +6,9 @@ Wordpress factory.
 
 Usage:
     wpfactory scaffold
+    wpfactory build [mysql|wordpress [--no-cache]]
     wpfactory run [mysql|wordpress]
     wpfactory config
-    wpfactory build [mysql|wordpress [--no-cache]]
     wpfactory update
     wpfactory upgrade
     wpfactory db export [--contents|--no-contents|--options]
