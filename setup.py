@@ -8,7 +8,8 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     package_data={
-        'wpfactory': ['docker/wordpress/*', 'docker/mysql/*'],
+        'wpfactory': ['docker/wordpress/*', 'docker/mysql/*',
+                      'docker/sitespeed.io/*'],
     },
     entry_points={
         'console_scripts': ['wpfactory=wpfactory:main']
