@@ -48,6 +48,17 @@ def error(msg, source=''):
     sys.exit(1)
 
 
+class DockerException(Exception):
+    pass
+
+
+class DockerNotRunningException(DockerException):
+    pass
+
+class DockerCommandException(DockerException):
+    "Docker is fine, but the command not"
+    pass
+
 class Project(object):
 
     def __init__(self):
@@ -70,11 +81,12 @@ class Project(object):
         if error:
             e = p.stderr.read()
             if e.find('level="fatal" msg="An error occurred trying to connect:') != -1:
-                error('Docker daemon is not running.')
+                raise DockerNotRunningException(e)
             m = DOCKER_ERROR.match(e)
             if m:
-                error(m.group(3), "Docker %s" % m.group(2))
-            raise Exception(e)
+                raise DockerException(m.group(3), m.group(2))
+            f.seek(0)
+            raise DockerCommandException(e, f.read())
         f.seek(0)
         return f
 
@@ -148,19 +160,36 @@ db:
 
     if arguments['config']:
         conf = project.conf
-        project.mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
-        project.mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
-                                                                            password=conf['db']['pass']))
-        project.mysql("GRANT ALL ON {name}.* TO '{user}'@'%';".format(name=conf['db']['name'],
-                                                                     user=conf['db']['user']))
-        project.mysql("FLUSH PRIVILEGES;")
-        project.wp('core', 'download')
-        project.wp('core', 'config', '--skip-check',
-           '--dbname=%s' % conf['db']['name'],
-           '--dbuser=%s' % conf['db']['user'],
-           '--dbpass=%s' % conf['db']['pass'],
-           '--dbhost=db'
-           )
+        try:
+            project.docker('exec', '-ti', 'wordpress-%s' % conf['project'],
+                           'mysql', '-h', 'db', '-u', conf['db']['user'],
+                           '--password=%s' % conf['db']['pass'],
+                           conf['db']['name'], '-e', 'SELECT 1+1;'
+                           )
+        except DockerCommandException as e:
+            err, out = e.args
+            if not out.startswith('ERROR 1045 (28000): Access denied for user'):
+                raise e
+            project.mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
+            project.mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
+                                                                                password=conf['db']['pass']))
+            project.mysql("GRANT ALL ON {name}.* TO '{user}'@'%';".format(name=conf['db']['name'],
+                                                                        user=conf['db']['user']))
+            project.mysql("FLUSH PRIVILEGES;")
+        try:
+            project.wp('core', 'download')
+        except DockerCommandException as e:
+            if e.args[1].find('WordPress files seem to already be present here.') == -1:
+                raise e
+        if os.path.exists('wordpress/wp-config.php'):
+            print "wp-config.php already exist"
+        else:
+            project.wp('core', 'config',# '--skip-check',
+            '--dbname=%s' % conf['db']['name'],
+            '--dbuser=%s' % conf['db']['user'],
+            '--dbpass=%s' % conf['db']['pass'],
+            '--dbhost=db'
+            )
         project.wp('core', 'install', '--url=%s' % conf['url'],
            '--title="%s"' % conf['name'], '--admin_email=%s' % conf['admin']['email'],
            '--admin_user=%s' % conf['admin']['user'], '--admin_password=%s' %
