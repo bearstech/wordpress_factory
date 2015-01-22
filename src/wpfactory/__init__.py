@@ -252,6 +252,8 @@ def main():
             project.docker('exec', '-ti', 'wordpress-%s' % p, 'sed',
                         '-i', "s/1000/%s/g" % user_uid,
                        '/etc/apache2/sites-available/default',)
+        else:
+            print "User wordpress already exists."
         project.docker('exec', '-ti', 'wordpress-%s' % p, 'kill', '-HUP', '1')
         url = "http://"+project.conf['url']+"/"
         puts(colored.green("Wordpress ready : You can now go to : %s" % url))
