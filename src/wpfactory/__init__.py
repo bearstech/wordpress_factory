@@ -178,12 +178,13 @@ def main():
             if not out.startswith('ERROR 1045 (28000): Access denied for user'):
                 raise e
             create_user = True
+        else:
+            if "ERROR" in result:
+                # Sometimes docker exec will return 0 but the cmd failed
+                if not result.startswith('ERROR 1045 (28000): Access denied for user'):
+                    raise DockerException(result)
+                create_user = True
 
-        if "ERROR" in result:
-            # Sometimes docker exec will return 0 but the cmd failed
-            if not result.startswith('ERROR 1045 (28000): Access denied for user'):
-                raise DockerException(result)
-            create_user = True
         if create_user:
             project.mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
             project.mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
