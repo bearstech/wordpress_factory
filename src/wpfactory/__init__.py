@@ -170,8 +170,8 @@ def main():
             r = project.docker('exec', '-ti', 'wordpress-%s' % conf['project'],
                        'mysql', '-h', 'db', '-u', conf['db']['user'],
                        '--password=%s' % conf['db']['pass'],
-                       conf['db']['name'], '-e', 'SELECT 1+1;'
-                       )
+                       conf['db']['name'], '-e', 'SELECT 1+1;')
+            result = r.read()
         except DockerCommandException as e:
             # Sometimes cmd errors will propagate to docker exec
             err, out = e.args
@@ -179,7 +179,6 @@ def main():
                 raise e
             create_user = True
 
-        result = r.read()
         if "ERROR" in result:
             # Sometimes docker exec will return 0 but the cmd failed
             if not result.startswith('ERROR 1045 (28000): Access denied for user'):
