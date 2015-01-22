@@ -211,6 +211,20 @@ def main():
                 project.wp('plugin', 'activate', plugin)
 
         p = conf['project']
+        # Set user UID for suexec
+        user_uid = os.getuid()
+        project.docker('exec', '-ti', 'wordpress-%s' % p, 'addgroup',
+                       '--gid', "%s" % user_uid, 'wordpress')
+        project.docker('exec', '-ti', 'wordpress-%s' % p, 'adduser',
+                       '--disabled-password', '--gecos', '""',
+                       '--no-create-home', '--home', '/var/www/test',
+                       '--uid', "%s" % user_uid, '--gid', "%s" % user_uid,
+                       'wordpress')
+        project.docker('exec', '-ti', 'wordpress-%s' % p, 'chown',
+                       'wordpress:', '-R', '/var/www')
+        project.docker('exec', '-ti', 'wordpress-%s' % p, 'sed',
+                       '-i', "s/1000/%s/g" % user_uid,
+                       '/etc/apache2/sites-available/default',)
         project.docker('exec', '-ti', 'wordpress-%s' % p, 'kill', '-HUP', '1')
         url = "http://"+project.conf['url']+"/"
         puts(colored.green("Wordpress ready : You can now go to : %s" % url))

@@ -8,6 +8,7 @@ RUN apt-get -y install php5-cgi php5-mysql apache2-mpm-worker apache2-suexec \
     curl python git
 ADD website.conf /etc/apache2/sites-available/default
 ADD fcgid.conf /etc/apache2/mods-available/
+RUN a2enmod suexec
 
 RUN mkdir -p /opt/wpcli
 WORKDIR /opt/wpcli
@@ -26,6 +27,10 @@ ADD https://raw.githubusercontent.com/bearstech/phptop/wp/phptop_hook.php /usr/s
 RUN chmod +r /usr/share/phptop/phptop_hook.php
 ADD https://raw.githubusercontent.com/bearstech/phptop/master/debian/phptop.ini etc/php5/conf.d/
 RUN chmod +r /etc/php5/conf.d/phptop.ini
+
+RUN mkdir -p /var/www/suexec/wordpress
+ADD php5-cgi /var/www/suexec/wordpress/
+RUN chmod +x /var/www/suexec/wordpress/php5-cgi
 WORKDIR /root
 
 EXPOSE 80
