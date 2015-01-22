@@ -217,17 +217,21 @@ def main():
             user_uid = 1000
         else:
             user_uid = os.getuid()
-        project.docker('exec', '-ti', 'wordpress-%s' % p, 'addgroup',
-                       '--gid', "%s" % user_uid, 'wordpress')
-        project.docker('exec', '-ti', 'wordpress-%s' % p, 'adduser',
-                       '--disabled-password', '--gecos', '""',
-                       '--no-create-home', '--home', '/var/www/test',
-                       '--uid', "%s" % user_uid, '--gid', "%s" % user_uid,
-                       'wordpress')
-        project.docker('exec', '-ti', 'wordpress-%s' % p, 'chown',
-                       'wordpress:', '-R', '/var/www')
-        project.docker('exec', '-ti', 'wordpress-%s' % p, 'sed',
-                       '-i', "s/1000/%s/g" % user_uid,
+        i = project.docker('exec', '-ti', 'wordpress-%s' % p, 'id', 'wordpress')
+        if i.read().startswith('uid=1000(wordpress) gid=1000(wordpress) groups=1000(wordpress)'):
+            print "User wordpress already exists."
+        else:
+            project.docker('exec', '-ti', 'wordpress-%s' % p, 'addgroup',
+                        '--gid', "%s" % user_uid, 'wordpress')
+            project.docker('exec', '-ti', 'wordpress-%s' % p, 'adduser',
+                        '--disabled-password', '--gecos', '""',
+                        '--no-create-home', '--home', '/var/www/test',
+                        '--uid', "%s" % user_uid, '--gid', "%s" % user_uid,
+                        'wordpress')
+            project.docker('exec', '-ti', 'wordpress-%s' % p, 'chown',
+                        'wordpress:', '-R', '/var/www')
+            project.docker('exec', '-ti', 'wordpress-%s' % p, 'sed',
+                        '-i', "s/1000/%s/g" % user_uid,
                        '/etc/apache2/sites-available/default',)
         project.docker('exec', '-ti', 'wordpress-%s' % p, 'kill', '-HUP', '1')
         url = "http://"+project.conf['url']+"/"
