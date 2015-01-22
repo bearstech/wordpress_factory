@@ -1,7 +1,8 @@
 Wordpress factory
 =================
 
-A factory to prepare, deploy, upgrade your Wordpress
+A factory to prepare, deploy, upgrade your Wordpress.
+Also Docker.
 
 No more LAMP, XAMP and other strange tools.
 Your Worpdress runs on a Linux, the same used in production, you work with your tool, and deploy as usual.
@@ -16,7 +17,7 @@ Install
 -------
 
 You need python and virtualenv to build the application,
-[docker](https://www.docker.com/) (local or [boot2docker](http://boot2docker.io/)) to use it.
+[docker](https://www.docker.com/) (>=1.3) (local or [boot2docker](http://boot2docker.io/)) to use it.
 
 ### Local install
 
@@ -47,8 +48,7 @@ Prepare your containers
 
 Start services
 
-    ./wpfactory run mysql
-    ./wpfactory run wordpress
+    ./wpfactory run
 
 Configure your wordpress
 
