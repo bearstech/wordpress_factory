@@ -229,10 +229,18 @@ def main():
             user_uid = 1000
         else:
             user_uid = os.getuid()
-        i = project.docker('exec', '-ti', 'wordpress-%s' % p, 'id', 'wordpress')
-        if i.read().startswith('uid=1000(wordpress) gid=1000(wordpress) groups=1000(wordpress)'):
-            print "User wordpress already exists."
+        # Again...
+        create_user = True
+        try:
+            i = project.docker('exec', '-ti', 'wordpress-%s' % p, 'id', 'wordpress')
+        except DockerCommandException as e:
+            create_user = True
         else:
+            if i.read().startswith('uid={uid}(wordpress)'.format(uid=user_uid) ):
+                print "User wordpress already exists."
+                create_user = False
+
+        if create_user:
             project.docker('exec', '-ti', 'wordpress-%s' % p, 'addgroup',
                         '--gid', "%s" % user_uid, 'wordpress')
             project.docker('exec', '-ti', 'wordpress-%s' % p, 'adduser',
