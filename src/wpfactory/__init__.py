@@ -80,6 +80,9 @@ class DockerCommandException(DockerException):
     pass
 
 class Project(object):
+    """Contains our project configuration and methods to execute some commands
+    in our dockers
+    """
 
     def __init__(self):
         if not os.path.exists('wordpress.yml'):
@@ -89,6 +92,8 @@ class Project(object):
             self.conf = yaml.load(f)
 
     def docker(self, *args, **opts):
+        """Execute a Docker command
+        """
         cmdline = "$ " + " ".join(['docker'] + list(args))
         puts(colored.yellow(cmdline))
         p = Popen(['docker'] + list(args), stdout=PIPE, stderr=PIPE, **opts)
@@ -111,12 +116,16 @@ class Project(object):
         return f
 
     def wp(self, *args):
+        """Execute a wp-cli command inside wordpress's docker
+        """
         args = ['exec', '-ti', 'wordpress-%s' % self.conf['project'],
                 'wp', '--allow-root', '--path=/var/www/test/root',
                 '--require=/opt/dictator/dictator.php'] + list(args)
         return self.docker(*args)
 
     def mysql(self, *args):
+        """Execute a mysql command inside wordpress's docker
+        """
         args = ['exec', '-ti', 'wordpress-%s' % self.conf['project'], 'mysql', '-h', 'db',
                 '--password=mypass', '-e'] + list(args)
         return self.docker(*args)
@@ -140,7 +149,8 @@ def guess_docker_host():
 
 
 def main():
-
+    """
+    """
     arguments = docopt(__doc__, version='Wordpress Manager %s' % __version__)
 
     cwd = os.getcwd()
@@ -164,22 +174,24 @@ def main():
 
     if arguments['config']:
         conf = project.conf
-        # Dirty but efficient because
-        create_user = False
+
+        # First step in our configuration, create users and tables for our wordpress
+
+        create_user = False # Dirty but efficient because...
         try:
             r = project.docker('exec', '-ti', 'wordpress-%s' % conf['project'],
                        'mysql', '-h', 'db', '-u', conf['db']['user'],
                        '--password=%s' % conf['db']['pass'],
                        conf['db']['name'], '-e', 'SELECT 1+1;')
         except DockerCommandException as e:
-            # Sometimes cmd errors will propagate to docker exec
+            # ...Sometimes cmd errors will propagate to docker exec
             if not e.args[1].startswith('ERROR 1045 (28000): Access denied for user'):
                 raise e
             create_user = True
         else:
             result = r.read()
             if "ERROR" in result:
-                # Sometimes docker exec will return 0 but the cmd failed
+                # ...Sometimes docker exec will return 0 but the cmd failed
                 if not result.startswith('ERROR 1045 (28000): Access denied for user'):
                     raise DockerException(result)
                 create_user = True
@@ -191,11 +203,14 @@ def main():
                                                                         user=conf['db']['user']))
             project.mysql("FLUSH PRIVILEGES;")
 
+        # Second step : wp-cli commands
+        # Download Wordpress
         try:
             project.wp('core', 'download')
         except DockerCommandException as e:
             if e.args[1].find('WordPress files seem to already be present here.') == -1:
                 raise e
+        # Configure it and install it
         if os.path.exists('wordpress/wp-config.php'):
             print "wp-config.php already exist"
         else:
@@ -223,13 +238,18 @@ def main():
                 project.wp('plugin', 'activate', plugin)
 
         p = conf['project']
+
+        # Third Step : create a user in our docker with the same user as our
+        # host
+        # So, the docker volume UID == curent user and he will be happy to edit
+        # some code, weeee !
+
         # Set user UID for suexec
         if platform.system() == "Darwin":
             user_uid = 1000
         else:
             user_uid = os.getuid()
-        # Again...
-        create_user = True
+        create_user = True # XXX Yeah... Again...
         try:
             i = project.docker('exec', '-ti', 'wordpress-%s' % p, 'id', 'wordpress')
         except DockerCommandException as e:
@@ -253,11 +273,13 @@ def main():
                         '-i', "s/1000/%s/g" % user_uid,
                        '/etc/apache2/sites-available/default',)
 
+        # Now restart our apache
         project.docker('exec', '-ti', 'wordpress-%s' % p, 'kill', '-HUP', '1')
         url = "http://"+project.conf['url']+"/"
         puts(colored.green("Wordpress ready : You can now go to : %s" % url))
 
     elif arguments['build']:
+        # Ask docker to build all our Dockerfiles
 
         here = os.path.dirname(__file__)
         def build_wordpress():
@@ -294,6 +316,7 @@ def main():
             build_sitespeed()
 
     elif arguments['run']:
+        # Create our containers and run it
         p = project.conf['project']
         def run_wordpress():
             if not os.path.exists('log'):
