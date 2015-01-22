@@ -160,16 +160,16 @@ db:
 
     if arguments['config']:
         conf = project.conf
-        try:
-            project.docker('exec', '-ti', 'wordpress-%s' % conf['project'],
-                           'mysql', '-h', 'db', '-u', conf['db']['user'],
-                           '--password=%s' % conf['db']['pass'],
-                           conf['db']['name'], '-e', 'SELECT 1+1;'
-                           )
-        except DockerCommandException as e:
-            err, out = e.args
-            if not out.startswith('ERROR 1045 (28000): Access denied for user'):
-                raise e
+        r = project.docker('exec', '-ti', 'wordpress-%s' % conf['project'],
+                       'mysql', '-h', 'db', '-u', conf['db']['user'],
+                       '--password=%s' % conf['db']['pass'],
+                       conf['db']['name'], '-e', 'SELECT 1+1;'
+                       )
+        result = r.read()
+        print "result : %s" % result
+        if "ERROR" in result:
+            if not result.startswith('ERROR 1045 (28000): Access denied for user'):
+                raise DockerException(result)
             project.mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
             project.mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
                                                                                 password=conf['db']['pass']))
