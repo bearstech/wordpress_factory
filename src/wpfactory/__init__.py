@@ -233,7 +233,8 @@ def main():
         try:
             i = project.docker('exec', '-ti', 'wordpress-%s' % p, 'id', 'wordpress')
         except DockerCommandException as e:
-            create_user = True
+            if not e.args[1].startswith('id: wordpress: No such user'):
+                raise e
         else:
             if i.read().startswith('uid={uid}(wordpress)'.format(uid=user_uid) ):
                 print "User wordpress already exists."
