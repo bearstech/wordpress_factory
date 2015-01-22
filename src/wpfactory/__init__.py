@@ -38,6 +38,7 @@ from docopt import docopt
 import os.path
 import webbrowser
 import re
+import platform
 
 DOCKER_ERROR = re.compile(r'time="(.*?)" level="(.*?)" msg="(.*?)"')
 SPACES = re.compile(r'\s\s+')
@@ -212,7 +213,10 @@ def main():
 
         p = conf['project']
         # Set user UID for suexec
-        user_uid = os.getuid()
+        if platform.system() == "Darwin":
+            user_uid = 1000
+        else:
+            user_uid = os.getuid()
         project.docker('exec', '-ti', 'wordpress-%s' % p, 'addgroup',
                        '--gid', "%s" % user_uid, 'wordpress')
         project.docker('exec', '-ti', 'wordpress-%s' % p, 'adduser',
