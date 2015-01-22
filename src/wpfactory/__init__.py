@@ -171,20 +171,18 @@ def main():
                        'mysql', '-h', 'db', '-u', conf['db']['user'],
                        '--password=%s' % conf['db']['pass'],
                        conf['db']['name'], '-e', 'SELECT 1+1;')
-            result = r.read()
         except DockerCommandException as e:
             # Sometimes cmd errors will propagate to docker exec
-            err, out = e.args
-            if not out.startswith('ERROR 1045 (28000): Access denied for user'):
+            if not e.args[1].startswith('ERROR 1045 (28000): Access denied for user'):
                 raise e
             create_user = True
         else:
+            result = r.read()
             if "ERROR" in result:
                 # Sometimes docker exec will return 0 but the cmd failed
                 if not result.startswith('ERROR 1045 (28000): Access denied for user'):
                     raise DockerException(result)
                 create_user = True
-
         if create_user:
             project.mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
             project.mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
@@ -192,6 +190,7 @@ def main():
             project.mysql("GRANT ALL ON {name}.* TO '{user}'@'%';".format(name=conf['db']['name'],
                                                                         user=conf['db']['user']))
             project.mysql("FLUSH PRIVILEGES;")
+
         try:
             project.wp('core', 'download')
         except DockerCommandException as e:
