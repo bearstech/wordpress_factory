@@ -238,7 +238,6 @@ def main():
             if i.read().startswith('uid={uid}(wordpress)'.format(uid=user_uid) ):
                 print "User wordpress already exists."
                 create_user = False
-
         if create_user:
             project.docker('exec', '-ti', 'wordpress-%s' % p, 'addgroup',
                         '--gid', "%s" % user_uid, 'wordpress')
@@ -252,8 +251,7 @@ def main():
             project.docker('exec', '-ti', 'wordpress-%s' % p, 'sed',
                         '-i', "s/1000/%s/g" % user_uid,
                        '/etc/apache2/sites-available/default',)
-        else:
-            print "User wordpress already exists."
+
         project.docker('exec', '-ti', 'wordpress-%s' % p, 'kill', '-HUP', '1')
         url = "http://"+project.conf['url']+"/"
         puts(colored.green("Wordpress ready : You can now go to : %s" % url))
