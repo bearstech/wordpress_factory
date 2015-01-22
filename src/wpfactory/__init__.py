@@ -43,6 +43,25 @@ DOCKER_ERROR = re.compile(r'time="(.*?)" level="(.*?)" msg="(.*?)"')
 SPACES = re.compile(r'\s\s+')
 
 
+SCAFFOLD_TEMPLATE = """---
+
+# Scaffolded Wordpress Factory config file.
+
+project: {project}
+url: {docker_host}:8000
+name: Wordpress Factory Test
+language:
+    - en
+admin:
+    email: admin@example.lan
+    user: admin
+    password: password
+db:
+    name: test
+    user: test
+    pass: password
+"""
+
 def error(msg, source=''):
     print "\n[Error {source}] {msg}".format(source=source, msg=msg)
     sys.exit(1)
@@ -134,24 +153,8 @@ def main():
             error("wordpress.yml already exist.")
         else:
             with open('wordpress.yml', 'w') as f:
-                f.write("""---
-
-# Scaffolded Wordpress Factory config file.
-
-project: {project}
-url: {docker_host}:8000
-name: Wordpress Factory Test
-language:
-    - en
-admin:
-    email: admin@example.lan
-    user: admin
-    password: password
-db:
-    name: test
-    user: test
-    pass: password
-""".format(project=cwd.split('/')[-1], docker_host=guess_docker_host()))
+                f.write(SCAFFOLD_TEMPLATE.format(project=cwd.split('/')[-1],
+                                                 docker_host=guess_docker_host()))
                 print "Just scaffolded the wordpress.yml file, edit it."
         return
 
