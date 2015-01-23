@@ -418,7 +418,7 @@ def main():
     elif arguments['sitespeed']:
         if not os.path.exists('sitespeed.io'):
             os.mkdir('sitespeed.io')
-        project.docker('run', '--rm', '--volume', '%s/sitespeed.io:/result' % cwd, 'sitespeed', 'sitespeed.io',
+        project.docker('run', '--rm', '--volume', '%s/sitespeed.io:/result' % cwd, 'bearstech/sitespeed', 'sitespeed.io',
                        '--screenshot', '--url', 'http://%s' % project.conf['url'],
                        '--resultBaseDir', '/result')
 
