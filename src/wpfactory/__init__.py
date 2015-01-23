@@ -7,7 +7,7 @@ Wordpress factory.
 Usage:
     wpfactory scaffold
     wpfactory build [mysql|wordpress|sitespeed] [--no-cache]
-    wpfactory run [mysql|wordpress] [--custom]
+    wpfactory run [mysql|wordpress] [--docker]
     wpfactory start
     wpfactory stop
     wpfactory config
@@ -313,6 +313,7 @@ def main():
         elif arguments['sitespeed']:
             build_sitespeed()
         else:
+            build_mysql()
             build_wordpress()
             build_sitespeed()
 
@@ -333,12 +334,12 @@ def main():
                            '--link=mysql-%s:db' % p, 'bearstech/wordpress')
 
         def run_mysql():
-            if arguments['--custom']:
-                project.docker('run', '--name=mysql-%s' % p, '-d',
-                               '-p', '3306', 'bearstech/mysql')
-            else:
+            if arguments['--docker']:
                 project.docker('run', '--name=mysql-%s' % p, '-d', '-e',
                                'MYSQL_ROOT_PASSWORD=mypass','mysql')
+            else:
+                project.docker('run', '--name=mysql-%s' % p, '-d',
+                               '-p', '3306', 'bearstech/mysql')
 
         if arguments['wordpress']:
             run_wordpress()
