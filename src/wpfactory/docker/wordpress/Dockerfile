@@ -28,7 +28,7 @@ ADD https://raw.githubusercontent.com/bearstech/phptop/wp/phptop_hook.php /usr/s
 ADD https://raw.githubusercontent.com/bearstech/phptop/master/debian/phptop.ini etc/php5/conf.d/
 
 ADD php5-cgi /var/www/suexec/wordpress/
-RUN chmod +x /var/www/suexec/wordpress/php5-cgi && \
+RUN chmod 700 /var/www/suexec/wordpress/php5-cgi && \
     chmod +r /usr/share/phptop/phptop_hook.php /etc/php5/conf.d/phptop.ini
 WORKDIR /root
 
