@@ -1,10 +1,11 @@
 FROM debian:wheezy
 
 # Base system
-RUN apt-get update && apt-get -y upgrade && apt-get -y install php5-cgi \
+RUN apt-get update && apt-get -y install php5-cgi \
     php5-mysql apache2-mpm-worker apache2-suexec libapache2-mod-fcgid php-apc \
     php5-memcached php5-curl php5-gd php5-intl php-pear php5-imagick \
-    php5-imap php5-mcrypt php5-cli less wget mysql-client curl python git
+    php5-imap php5-mcrypt php5-cli less wget mysql-client curl python git \
+    && rm -r /var/lib/apt/lists/*
 ADD website.conf /etc/apache2/sites-available/default
 ADD fcgid.conf /etc/apache2/mods-available/
 RUN a2enmod suexec
