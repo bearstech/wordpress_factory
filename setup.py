@@ -6,7 +6,7 @@ setup(
     name='wpfactory',
     description='A factory to prepare, deploy, upgrade your Wordpress.'+
     " Also Docker.",
-    version='0.1',
+    version='0.2',
     author='Mathieu Lecarme',
     author_email='mlecarme@bearstech.com',
     maintainer='Johan Charpentier',

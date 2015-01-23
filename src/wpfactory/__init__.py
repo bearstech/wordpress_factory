@@ -26,7 +26,7 @@ Options:
     --no-wxr    Export all except WXR stuff
 """
 
-__version__ = '0.1'
+__version__ = '0.2'
 
 from subprocess import Popen, PIPE
 from clint.textui import colored, puts
