@@ -6,8 +6,8 @@ RUN apt-get update && apt-get -y install php5-cgi \
     php5-memcached php5-curl php5-gd php5-intl php-pear php5-imagick \
     php5-imap php5-mcrypt php5-cli less wget mysql-client curl python git \
     && rm -r /var/lib/apt/lists/*
-ADD website.conf /etc/apache2/sites-available/default
-ADD fcgid.conf /etc/apache2/mods-available/
+COPY website.conf /etc/apache2/sites-available/default
+COPY fcgid.conf /etc/apache2/mods-available/
 RUN a2enmod suexec
 
 
@@ -24,10 +24,10 @@ RUN chmod +x wp-cli.phar && \
 WORKDIR /opt/
 RUN git clone https://github.com/danielbachhuber/dictator.git
 
-ADD https://raw.githubusercontent.com/bearstech/phptop/wp/phptop_hook.php /usr/share/phptop/
-ADD https://raw.githubusercontent.com/bearstech/phptop/master/debian/phptop.ini etc/php5/conf.d/
+RUN wget https://raw.githubusercontent.com/bearstech/phptop/wp/phptop_hook.php -O /usr/share/phptop/phptop_hook.php
+RUN wget https://raw.githubusercontent.com/bearstech/phptop/master/debian/phptop.ini -O /etc/php5/conf.d/phptop.ini
 
-ADD php5-cgi /var/www/suexec/wordpress/
+COPY php5-cgi /var/www/suexec/wordpress/
 RUN chmod 700 /var/www/suexec/wordpress/php5-cgi && \
     chmod +r /usr/share/phptop/phptop_hook.php /etc/php5/conf.d/phptop.ini
 WORKDIR /root
