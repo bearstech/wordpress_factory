@@ -7,7 +7,7 @@ Wordpress factory.
 Usage:
     wpfactory scaffold
     wpfactory build [mysql|wordpress|sitespeed] [--no-cache]
-    wpfactory run [mysql|wordpress]
+    wpfactory run [mysql|wordpress] [--custom]
     wpfactory start
     wpfactory stop
     wpfactory config
@@ -286,22 +286,24 @@ def main():
             args = ['build']
             if arguments['--no-cache']:
                 args.append('--no-cache')
-            args += ['-t', 'wordpress', os.path.join(here, 'docker',
+            args += ['-t', 'bearstech/wordpress', os.path.join(here, 'docker',
                                                      'wordpress')]
-            project.docker(*args)
-        def build_mysql():
-            args = ['build']
-            if arguments['--no-cache']:
-                args.append('--no-cache')
-            args += ['-t', 'mysql', os.path.join(here, 'docker', 'mysql')]
             project.docker(*args)
 
         def build_sitespeed():
             args = ['build']
             if arguments['--no-cache']:
                 args.append('--no-cache')
-            args += ['-t', 'sitespeed', os.path.join(here, 'docker',
+            args += ['-t', 'bearstech/sitespeed', os.path.join(here, 'docker',
                                                      'sitespeed.io')]
+            project.docker(*args)
+
+        def build_mysql():
+            args = ['build']
+            if arguments['--no-cache']:
+                args.append('--no-cache')
+            args += ['-t', 'bearstech/mysql', os.path.join(here, 'docker',
+                                                     'mysql')]
             project.docker(*args)
 
         if arguments['wordpress']:
@@ -311,7 +313,6 @@ def main():
         elif arguments['sitespeed']:
             build_sitespeed()
         else:
-            build_mysql()
             build_wordpress()
             build_sitespeed()
 
@@ -329,11 +330,15 @@ def main():
                            '--volume' , '%s/wordpress:/var/www/test/root' % cwd,
                            '--volume', '%s/log:/var/log/apache2/' % cwd,
                            '--volume', '%s/dump:/dump/' % cwd,
-                           '--link=mysql-%s:db' % p, 'wordpress')
+                           '--link=mysql-%s:db' % p, 'bearstech/wordpress')
 
         def run_mysql():
-            project.docker('run', '--name=mysql-%s' % p, '-d',
-                           '-p', '3306', 'mysql')
+            if arguments['--custom']:
+                project.docker('run', '--name=mysql-%s' % p, '-d',
+                               '-p', '3306', 'bearstech/mysql')
+            else:
+                project.docker('run', '--name=mysql-%s' % p, '-d', '-e',
+                               'MYSQL_ROOT_PASSWORD=mypass','mysql')
 
         if arguments['wordpress']:
             run_wordpress()
