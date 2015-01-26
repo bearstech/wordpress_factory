@@ -221,11 +221,12 @@ def main():
             '--dbhost=db'
             )
         project.wp('core', 'install', '--url=%s' % conf['url'],
-           '--title="%s"' % conf['name'], '--admin_email=%s' % conf['admin']['email'],
+           '--title=%s' % conf['name'], '--admin_email=%s' % conf['admin']['email'],
            '--admin_user=%s' % conf['admin']['user'], '--admin_password=%s' %
            conf['admin']['password'])
 
         project.wp('option', 'set', 'siteurl', "http://%s" % conf['url'])
+        project.wp('option', 'set', 'blogname', conf['name'])
 
         for language in conf['language']:
             if language != 'en':
