@@ -16,7 +16,7 @@ setup(
     package_dir={'': 'src'},
     package_data={
         'wpfactory': ['docker/wordpress/*', 'docker/mysql/*',
-                      'docker/sitespeed.io/*'],
+                      'docker/sitespeed/*', 'docker/mailhog/*'],
     },
     entry_points={
         'console_scripts': ['wpfactory=wpfactory:main']

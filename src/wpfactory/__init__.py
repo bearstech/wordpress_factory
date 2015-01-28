@@ -6,7 +6,7 @@ Wordpress factory.
 
 Usage:
     wpfactory scaffold
-    wpfactory build [mysql|wordpress|sitespeed] [--no-cache]
+    wpfactory build [mysql|wordpress|sitespeed|mailhog] [--no-cache]
     wpfactory run [mysql|wordpress] [--docker]
     wpfactory start
     wpfactory stop
@@ -139,6 +139,16 @@ class Project(object):
             if service.split('-')[-1] == project:
                 s.add(service[:-(len(project)+1)])
         return s
+
+    def build(self, name, no_cache=False):
+        here = os.path.dirname(__file__)
+        args = ['build']
+        if no_cache:
+            args.append('--no-cache')
+        args += ['-t', 'bearstech/%s' % name, os.path.join(here, 'docker',
+                                                           name)]
+        self.docker(*args)
+
 
 def guess_docker_host():
         d = os.environ.get('DOCKER_HOST', None)
@@ -282,41 +292,20 @@ def main():
     elif arguments['build']:
         # Ask docker to build all our Dockerfiles
 
-        here = os.path.dirname(__file__)
-        def build_wordpress():
-            args = ['build']
-            if arguments['--no-cache']:
-                args.append('--no-cache')
-            args += ['-t', 'bearstech/wordpress', os.path.join(here, 'docker',
-                                                     'wordpress')]
-            project.docker(*args)
-
-        def build_sitespeed():
-            args = ['build']
-            if arguments['--no-cache']:
-                args.append('--no-cache')
-            args += ['-t', 'bearstech/sitespeed', os.path.join(here, 'docker',
-                                                     'sitespeed.io')]
-            project.docker(*args)
-
-        def build_mysql():
-            args = ['build']
-            if arguments['--no-cache']:
-                args.append('--no-cache')
-            args += ['-t', 'bearstech/mysql', os.path.join(here, 'docker',
-                                                     'mysql')]
-            project.docker(*args)
-
+        no_cache = arguments['--no-cache']
         if arguments['wordpress']:
-            build_wordpress()
+            project.build('wordpress', no_cache)
         elif arguments['mysql']:
-            build_mysql()
+            project.build('mysql', no_cache)
         elif arguments['sitespeed']:
-            build_sitespeed()
+            project.build('sitespeed', no_cache)
+        elif arguments['mailhog']:
+            project.build('mailhog', no_cache)
         else:
-            build_mysql()
-            build_wordpress()
-            build_sitespeed()
+            project.build('wordpress', no_cache)
+            project.build('mysql', no_cache)
+            project.build('sitespeed', no_cache)
+            project.build('mailhog', no_cache)
 
     elif arguments['run']:
         # Create our containers and run it
