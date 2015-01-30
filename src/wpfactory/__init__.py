@@ -7,7 +7,7 @@ Wordpress factory.
 Usage:
     wpfactory scaffold
     wpfactory build [mysql|wordpress|sitespeed|mailhog] [--no-cache]
-    wpfactory run [mysql|wordpress] [--docker]
+    wpfactory run [mysql|wordpress|mailhog] [--docker]
     wpfactory start
     wpfactory stop
     wpfactory config
@@ -17,6 +17,7 @@ Usage:
     wpfactory wxr export
     wpfactory dictator export
     wpfactory home
+    wpfactory mail
     wpfactory sitespeed
     wpfactory
 
@@ -39,6 +40,7 @@ import os.path
 import webbrowser
 import re
 import platform
+import json
 
 DOCKER_ERROR = re.compile(r'time="(.*?)" level="(.*?)" msg="(.*?)"')
 SPACES = re.compile(r'\s\s+')
@@ -148,6 +150,9 @@ class Project(object):
         args += ['-t', 'bearstech/%s' % name, os.path.join(here, 'docker',
                                                            name)]
         self.docker(*args)
+
+    def inspect(self, name):
+        return json.loads(self.docker('inspect', name).read())[0]
 
 
 def guess_docker_host():
@@ -321,6 +326,7 @@ def main():
                            '--volume' , '%s/wordpress:/var/www/test/root' % cwd,
                            '--volume', '%s/log:/var/log/apache2/' % cwd,
                            '--volume', '%s/dump:/dump/' % cwd,
+                           '--link=mailhog:mail',
                            '--link=mysql-%s:db' % p, 'bearstech/wordpress')
 
         def run_mysql():
@@ -331,12 +337,19 @@ def main():
                 project.docker('run', '--name=mysql-%s' % p, '-d',
                                '-p', '3306', 'bearstech/mysql')
 
+        def run_mailhog():
+            project.docker('run', '--name=mailhog', '-d', '-p', '8025',
+                           '-p', '25',
+                           '--hostname=mail.example.com', 'bearstech/mailhog')
         if arguments['wordpress']:
             run_wordpress()
         elif arguments['mysql']:
             run_mysql()
+        elif arguments['mailhog']:
+            run_mailhog()
         else:
             run_mysql()
+            run_mailhog()
             run_wordpress()
 
     elif arguments['start']:
@@ -411,6 +424,12 @@ def main():
         project.docker('run', '--rm', '--volume', '%s/sitespeed.io:/result' % cwd, 'bearstech/sitespeed', 'sitespeed.io',
                        '--screenshot', '--url', 'http://%s' % project.conf['url'],
                        '--resultBaseDir', '/result')
+
+    elif arguments['mail']:
+        port = project.inspect('mailhog')["NetworkSettings"]["Ports"]["8025/tcp"][0]["HostPort"]
+        url = "http://%s:%s" % (guess_docker_host(), port)
+        print "Opening : %s" % url
+        webbrowser.open(url)
 
     else:
         print "Unknown command"

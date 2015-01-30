@@ -4,7 +4,7 @@ FROM debian:wheezy
 RUN apt-get update && apt-get -y install php5-cgi \
     php5-mysql apache2-mpm-worker apache2-suexec libapache2-mod-fcgid php-apc \
     php5-memcached php5-curl php5-gd php5-intl php-pear php5-imagick \
-    php5-imap php5-mcrypt php5-cli less wget mysql-client curl python git \
+    php5-imap php5-mcrypt php5-cli less wget mysql-client curl python git ssmtp \
     && rm -r /var/lib/apt/lists/*
 COPY website.conf /etc/apache2/sites-available/default
 COPY fcgid.conf /etc/apache2/mods-available/
