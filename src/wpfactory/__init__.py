@@ -20,6 +20,7 @@ Usage:
     wpfactory mail
     wpfactory sitespeed
     wpfactory fig.yml
+    wpfactory test
     wpfactory
 
 Options:
@@ -42,6 +43,8 @@ import webbrowser
 import re
 import platform
 import json
+from compose.cli.command import Command
+
 
 DOCKER_ERROR = re.compile(r'time="(.*?)" level="(.*?)" msg="(.*?)"')
 SPACES = re.compile(r'\s\s+')
@@ -65,6 +68,12 @@ db:
     user: test
     pass: password
 """
+
+def get_project():
+    c = Command()
+    cfg = c.get_config_path()
+    return c.get_project(cfg)
+
 
 def error(msg, source=''):
     print "\n[Error {source}] {msg}".format(source=source, msg=msg)
@@ -458,6 +467,13 @@ def main():
             }
         }
         yaml.dump(fig, open('fig.yml', 'w'), explicit_start=True, default_flow_style=False)
+
+    elif arguments['test']:
+        p = get_project()
+        print p.get_service('wordpress').get_container().name
+        c = p.get_service('wordpress').get_container()
+        c.client._version = '1.16' # Monkey patch
+        print c.client.execute(c.id, ['ps', 'aux'])
 
     else:
         print "Unknown command"
