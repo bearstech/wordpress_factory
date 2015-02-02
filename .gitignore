@@ -11,3 +11,4 @@ wordpress
 src/wpfactory.egg-info/
 wpfactory
 sitespeed.io
+fig.yml

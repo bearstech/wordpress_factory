@@ -19,6 +19,7 @@ Usage:
     wpfactory home
     wpfactory mail
     wpfactory sitespeed
+    wpfactory fig.yml
     wpfactory
 
 Options:
@@ -430,6 +431,33 @@ def main():
         url = "http://%s:%s" % (guess_docker_host(), port)
         print "Opening : %s" % url
         webbrowser.open(url)
+
+    elif arguments['fig.yml']:
+        fig = {
+            'mailhog': {
+                'image': 'bearstech/mailhog',
+                'ports':[25, 8025],
+                'hostname': 'mail.example.com'},
+            'mysql': {
+                'ports': [3306],
+                'image': 'bearstech/mysql'
+            },
+            'wordpress': {
+                'image': 'bearstech/wordpress',
+                'ports': [80],
+                'hostname': 'wordpress.example.com',
+                'volumes': [
+                    'wordpress:/var/www/test/root',
+                    'log:/var/log/apache2/',
+                    'dump:/dump'
+                ],
+                'links': [
+                    'mysql:db',
+                    'mailhog:mail'
+                ]
+            }
+        }
+        yaml.dump(fig, open('fig.yml', 'w'), explicit_start=True, default_flow_style=False)
 
     else:
         print "Unknown command"
