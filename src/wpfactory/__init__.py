@@ -45,6 +45,71 @@ import platform
 import json
 from compose.cli.command import Command
 from compose.cli.docker_client import docker_client
+import logging
+import dockerpty
+from docker.client import Client
+from docker import utils
+import six
+
+
+def execute_return(self, container, cmd, detach=False, stdout=True, stderr=True,
+            stream=False, tty=False):
+    if utils.compare_version('1.15', self._version) < 0:
+        raise errors.APIError('Exec is not supported in API < 1.15')
+    if isinstance(container, dict):
+        container = container.get('Id')
+    if isinstance(cmd, six.string_types):
+        cmd = shlex.split(str(cmd))
+
+    data = {
+        'Container': container,
+        'User': '',
+        'Privileged': False,
+        'Tty': tty,
+        'AttachStdin': False,
+        'AttachStdout': stdout,
+        'AttachStderr': stderr,
+        'Detach': detach,
+        'Cmd': cmd
+    }
+
+    # create the command
+    url = self._url('/containers/{0}/exec'.format(container))
+    res = self._post_json(url, data=data)
+    self._raise_for_status(res)
+
+    # start the command
+    cmd_id = res.json().get('Id')
+    res = self._post_json(self._url('/exec/{0}/start'.format(cmd_id)),
+                        data=data, stream=stream)
+    self._raise_for_status(res)
+    if stream:
+        return cmd_id, self._multiplexed_socket_stream_helper(res)
+    elif six.PY3:
+        return cmd_id, bytes().join(
+            [x for x in self._multiplexed_buffer_helper(res)]
+        )
+    else:
+        return cmd_id, str().join(
+            [x for x in self._multiplexed_buffer_helper(res)]
+        )
+
+# This is monkey patch
+Client.execute_return = execute_return
+
+def execute_inspect(self, id):
+    url = self._url('/exec/{0}/json'.format(id))
+    res = self._get(url)
+    self._raise_for_status(res)
+    return res.json()
+
+Client.execute_inspect = execute_inspect
+
+
+
+hdl = logging.StreamHandler()
+logger = logging.getLogger('compose.cli.command')
+logger.addHandler(hdl)
 
 
 DOCKER_ERROR = re.compile(r'time="(.*?)" level="(.*?)" msg="(.*?)"')
@@ -118,6 +183,16 @@ class Project(object):
         c.client._version = '1.16' # Monkey patch, Docker > 1.2
         return c
 
+<<<<<<< HEAD
+=======
+    def execute(self, service, *args):
+        c = self.get_container(service)
+
+        cid, r = c.client.execute_return(c.id, args, stream=False)
+        r = c.client.execute_inspect(cid)
+        return r
+
+>>>>>>> Object and build.
     def docker(self, *args, **opts):
         """Execute a Docker command
         """
@@ -455,8 +530,10 @@ def main():
         yaml.dump(fig, open('fig.yml', 'w'), explicit_start=True, default_flow_style=False)
 
     elif arguments['test']:
-        c = project.get_container('wordpress')
-        print c.client.execute(c.id, ['ps', 'aux'])
+        w = project.execute('wordpress', 'oups', 'aux')
+        print w
+        w = project.execute('wordpress', 'ps', 'aux')
+        print w
 
     else:
         print "Unknown command"
