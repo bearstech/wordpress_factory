@@ -44,6 +44,7 @@ import re
 import platform
 import json
 from compose.cli.command import Command
+from compose.cli.docker_client import docker_client
 
 
 DOCKER_ERROR = re.compile(r'time="(.*?)" level="(.*?)" msg="(.*?)"')
@@ -69,10 +70,6 @@ db:
     pass: password
 """
 
-def get_project():
-    c = Command()
-    cfg = c.get_config_path()
-    return c.get_project(cfg)
 
 
 def error(msg, source=''):
@@ -97,11 +94,29 @@ class Project(object):
     """
 
     def __init__(self):
+        self._project = None
         if not os.path.exists('wordpress.yml'):
             print __doc__
             error("Can't find wordpress.yml file, use:\n$ wpfactory scaffold\nand edit it." )
         with open('wordpress.yml', 'r') as f:
             self.conf = yaml.load(f)
+
+    def get_client(self):
+        c = docker_client()
+        c._version = '1.16'
+        return c
+
+    def get_project(self):
+        if self._project is None:
+            c = Command()
+            cfg = c.get_config_path()
+            self._project = c.get_project(cfg)
+        return self._project
+
+    def get_container(self, name):
+        c = self.get_project().get_service(name).get_container()
+        c.client._version = '1.16' # Monkey patch, Docker > 1.2
+        return c
 
     def docker(self, *args, **opts):
         """Execute a Docker command
@@ -130,17 +145,15 @@ class Project(object):
     def wp(self, *args):
         """Execute a wp-cli command inside wordpress's docker
         """
-        args = ['exec', '-ti', 'wordpress-%s' % self.conf['project'],
-                'wp', '--allow-root', '--path=/var/www/test/root',
-                '--require=/opt/dictator/dictator.php'] + list(args)
-        return self.docker(*args)
+        return self.get_container('wordpress').client.execute([
+            'wp', '--allow-root', '--path=/var/www/test/root',
+            '--require=/opt/dictator/dictator.php'] + list(args))
 
     def mysql(self, *args):
         """Execute a mysql command inside wordpress's docker
         """
-        args = ['exec', '-ti', 'wordpress-%s' % self.conf['project'], 'mysql', '-h', 'db',
-                '--password=mypass', '-e'] + list(args)
-        return self.docker(*args)
+        return self.get_container('wordpress').client.execute(['mysql', '-h',
+                                                               'db', '--password=mypass', '-e'] + list(args))
 
     def services(self):
         "Started services."
@@ -154,15 +167,12 @@ class Project(object):
 
     def build(self, name, no_cache=False):
         here = os.path.dirname(__file__)
-        args = ['build']
-        if no_cache:
-            args.append('--no-cache')
-        args += ['-t', 'bearstech/%s' % name, os.path.join(here, 'docker',
-                                                           name)]
-        self.docker(*args)
+        dockerfile = os.path.join(here, 'docker', name)
+        return self.get_client().build(path=dockerfile, tag='bearstech/%s' % name,
+                                nocache=no_cache)
 
     def inspect(self, name):
-        return json.loads(self.docker('inspect', name).read())[0]
+        return self.get_container(name).inspect()
 
 
 def guess_docker_host():
@@ -469,10 +479,7 @@ def main():
         yaml.dump(fig, open('fig.yml', 'w'), explicit_start=True, default_flow_style=False)
 
     elif arguments['test']:
-        p = get_project()
-        print p.get_service('wordpress').get_container().name
-        c = p.get_service('wordpress').get_container()
-        c.client._version = '1.16' # Monkey patch
+        c = project.get_container('wordpress')
         print c.client.execute(c.id, ['ps', 'aux'])
 
     else:
