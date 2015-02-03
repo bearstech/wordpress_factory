@@ -52,6 +52,32 @@ from docker import utils
 import six
 
 
+class ExecuteFutur(object):
+
+    def __init__(self, client, command_id, flow):
+        self.client = client
+        self.command_id = command_id
+        self.flow = flow
+
+    def __iter__(self):
+        return self.flow
+
+    def wait(self):
+        if six.PY3:
+            return bytes().join(
+                [x for x in self.client._multiplexed_buffer_helper(self.flow)]
+            )
+        else:
+            return str().join(
+                [x for x in self.client._multiplexed_buffer_helper(self.flow)]
+            )
+
+    def inspect(self):
+        url = self.client._url('/exec/{0}/json'.format(self.command_id))
+        res = self.client._get(url)
+        self.client._raise_for_status(res)
+        return res.json()
+
 def execute_return(self, container, cmd, detach=False, stdout=True, stderr=True,
             stream=False, tty=False):
     if utils.compare_version('1.15', self._version) < 0:
@@ -83,29 +109,12 @@ def execute_return(self, container, cmd, detach=False, stdout=True, stderr=True,
     res = self._post_json(self._url('/exec/{0}/start'.format(cmd_id)),
                         data=data, stream=stream)
     self._raise_for_status(res)
-    if stream:
-        return cmd_id, self._multiplexed_socket_stream_helper(res)
-    elif six.PY3:
-        return cmd_id, bytes().join(
-            [x for x in self._multiplexed_buffer_helper(res)]
-        )
-    else:
-        return cmd_id, str().join(
-            [x for x in self._multiplexed_buffer_helper(res)]
-        )
+
+    return ExecuteFutur(self, cmd_id, res)
+
 
 # This is monkey patch
 Client.execute_return = execute_return
-
-def execute_inspect(self, id):
-    url = self._url('/exec/{0}/json'.format(id))
-    res = self._get(url)
-    self._raise_for_status(res)
-    return res.json()
-
-Client.execute_inspect = execute_inspect
-
-
 
 hdl = logging.StreamHandler()
 logger = logging.getLogger('compose.cli.command')
@@ -186,9 +195,9 @@ class Project(object):
     def execute(self, service, *args):
         c = self.get_container(service)
 
-        cid, r = c.client.execute_return(c.id, args, stream=False)
-        r = c.client.execute_inspect(cid)
-        return r
+        r = c.client.execute_return(c.id, args, stream=False)
+        r.wait()
+        return r.inspect()
 
     def docker(self, *args, **opts):
         """Execute a Docker command
