@@ -183,8 +183,6 @@ class Project(object):
         c.client._version = '1.16' # Monkey patch, Docker > 1.2
         return c
 
-<<<<<<< HEAD
-=======
     def execute(self, service, *args):
         c = self.get_container(service)
 
@@ -192,7 +190,6 @@ class Project(object):
         r = c.client.execute_inspect(cid)
         return r
 
->>>>>>> Object and build.
     def docker(self, *args, **opts):
         """Execute a Docker command
         """
