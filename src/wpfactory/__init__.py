@@ -42,11 +42,9 @@ import os.path
 import webbrowser
 import re
 import platform
-import json
 from compose.cli.command import Command
 from compose.cli.docker_client import docker_client
 import logging
-import dockerpty
 from docker.client import Client
 from docker import utils
 import six
@@ -509,6 +507,11 @@ def main():
         webbrowser.open(url)
 
     elif arguments['fig.yml']:
+        if platform.system() == "Darwin":
+            user_uid = 1000
+        else:
+            user_uid = os.getuid()
+        port = project.conf["url"].split(":")[1]
         fig = {
             'mailhog': {
                 'image': 'bearstech/mailhog',
@@ -520,7 +523,7 @@ def main():
             },
             'wordpress': {
                 'image': 'bearstech/wordpress',
-                'ports': [80],
+                'ports': ["%s:80" % port],
                 'hostname': 'wordpress.example.com',
                 'volumes': [
                     'wordpress:/var/www/test/root',
@@ -530,7 +533,10 @@ def main():
                 'links': [
                     'mysql:db',
                     'mailhog:mail'
-                ]
+                ],
+                'environment': {
+                    'WORDPRESS_ID': user_uid
+                }
             }
         }
         yaml.dump(fig, open('fig.yml', 'w'), explicit_start=True, default_flow_style=False)
