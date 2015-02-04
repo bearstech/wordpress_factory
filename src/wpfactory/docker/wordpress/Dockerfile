@@ -3,7 +3,7 @@ FROM debian:wheezy
 # Base system
 RUN apt-get update && apt-get -y install php5-cgi \
     php5-mysql apache2-mpm-worker apache2-suexec libapache2-mod-fcgid php-apc \
-    php5-memcached php5-curl php5-gd php5-intl php-pear php5-imagick \
+    php5-memcached php5-curl php5-gd php5-intl php-pear php5-imagick adduser\
     php5-imap php5-mcrypt php5-cli less wget mysql-client curl python git ssmtp \
     && rm -r /var/lib/apt/lists/*
 COPY website.conf /etc/apache2/sites-available/default
@@ -30,7 +30,10 @@ RUN wget https://raw.githubusercontent.com/bearstech/phptop/master/debian/phptop
 COPY php5-cgi /var/www/suexec/wordpress/
 RUN chmod 700 /var/www/suexec/wordpress/php5-cgi && \
     chmod +r /usr/share/phptop/phptop_hook.php /etc/php5/conf.d/phptop.ini
-WORKDIR /root
+
+COPY docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
 EXPOSE 80
 

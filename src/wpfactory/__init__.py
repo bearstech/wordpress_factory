@@ -256,41 +256,7 @@ def main():
 
         p = conf['project']
 
-        # Third Step : create a user in our docker with the same user as our
-        # host
-        # So, the docker volume UID == curent user and he will be happy to edit
-        # some code, weeee !
-
-        # Set user UID for suexec
-        if platform.system() == "Darwin":
-            user_uid = 1000
-        else:
-            user_uid = os.getuid()
-        create_user = True # XXX Yeah... Again...
-        try:
-            i = project.docker('exec', '-ti', 'wordpress-%s' % p, 'id', 'wordpress')
-        except DockerCommandException as e:
-            if not e.args[1].startswith('id: wordpress: No such user'):
-                raise e
-        else:
-            if i.read().startswith('uid={uid}(wordpress)'.format(uid=user_uid) ):
-                print "User wordpress already exists."
-                create_user = False
-        if create_user:
-            project.docker('exec', '-ti', 'wordpress-%s' % p, 'addgroup',
-                        '--gid', "%s" % user_uid, 'wordpress')
-            project.docker('exec', '-ti', 'wordpress-%s' % p, 'adduser',
-                        '--disabled-password', '--gecos', '""',
-                        '--no-create-home', '--home', '/var/www/test',
-                        '--uid', "%s" % user_uid, '--gid', "%s" % user_uid,
-                        'wordpress')
-            project.docker('exec', '-ti', 'wordpress-%s' % p, 'chown',
-                        'wordpress:', '-R', '/var/www')
-            project.docker('exec', '-ti', 'wordpress-%s' % p, 'sed',
-                        '-i', "s/1000/%s/g" % user_uid,
-                       '/etc/apache2/sites-available/default',)
-
-        # Now restart our apache
+        # Now reload our apache
         project.docker('exec', '-ti', 'wordpress-%s' % p, 'kill', '-HUP', '1')
         url = "http://"+project.conf['url']+"/"
         puts(colored.green("Wordpress ready : You can now go to : %s" % url))
@@ -321,12 +287,22 @@ def main():
                 os.mkdir('log')
             if not os.path.exists('dump'):
                 os.mkdir('dump')
+            # Third Step : create a user in our docker with the same user as our
+            # host
+            # So, the docker volume UID == curent user and he will be happy to edit
+            # some code, weeee !
+            # Set user UID for suexec
+            if platform.system() == "Darwin":
+                user_uid = 1000
+            else:
+                user_uid = os.getuid()
             project.docker('run', '--name=wordpress-%s' % p,
                            '-d', '-p', '8000:80',
                            '--hostname=wordpress.example.com',
                            '--volume' , '%s/wordpress:/var/www/test/root' % cwd,
                            '--volume', '%s/log:/var/log/apache2/' % cwd,
                            '--volume', '%s/dump:/dump/' % cwd,
+                           '-e', 'WORDPRESS_ID=%s' % user_uid,
                            '--link=mailhog:mail',
                            '--link=mysql-%s:db' % p, 'bearstech/wordpress')
 
