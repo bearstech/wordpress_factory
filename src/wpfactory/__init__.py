@@ -377,8 +377,118 @@ Wordpress factory.
         print "Opening : %s" % url
         webbrowser.open(url)
 
+    def exec_(self, service, *args):
+        project = self.get_project('docker-compose.yml')
+        wp = project.get_service(service)
+
+        container = wp.get_container()
+        assert container.is_running
+        c = docker_client()
+        c._version = '1.16'
+
+        cmd = list(args)
+        print cmd
+        r = c.execute_return(container.id, cmd, stream=False)
+        out = r.wait()
+        inspect = r.inspect()
+        if inspect['ExitCode'] != 0:
+            raise DockerCommandException(out)
+
+    def wp(self, *args):
+        return self.exec_('wordpress', 'wp', *args)
+
     def config(self, project, options):
-        pass
+        """
+        Configure your Wordpress
+
+        Usage: config
+        """
+        conf = self.config
+        create_user = False # Dirty but efficient because...
+        try:
+            o = self.exec_('wordpress', 'mysql', '-h', 'db', '-u', conf['db']['user'],
+                           '--password=%s' % conf['db']['pass'],
+                           conf['db']['name'], '-e', 'SELECT 1+1;')
+        except DockerCommandException as e:
+            if not e.args[0].startswith('ERROR 1045 (28000): Access denied for user'):
+                raise e
+            create_user = True
+        else:
+            pass
+
+        return
+
+        conf = project.conf
+
+        # First step in our configuration, create users and tables for our wordpress
+
+        create_user = False # Dirty but efficient because...
+        try:
+            r = project.docker('exec', '-ti', 'wordpress-%s' % conf['project'],
+                       'mysql', '-h', 'db', '-u', conf['db']['user'],
+                       '--password=%s' % conf['db']['pass'],
+                       conf['db']['name'], '-e', 'SELECT 1+1;')
+        except DockerCommandException as e:
+            # ...Sometimes cmd errors will propagate to docker exec
+            if not e.args[1].startswith('ERROR 1045 (28000): Access denied for user'):
+                raise e
+            create_user = True
+        else:
+            result = r.read()
+            if "ERROR" in result:
+                # ...Sometimes docker exec will return 0 but the cmd failed
+                if not result.startswith('ERROR 1045 (28000): Access denied for user'):
+                    raise DockerException(result)
+                create_user = True
+        if create_user:
+            project.mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
+            project.mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
+                                                                                password=conf['db']['pass']))
+            project.mysql("GRANT ALL ON {name}.* TO '{user}'@'%';".format(name=conf['db']['name'],
+                                                                        user=conf['db']['user']))
+            project.mysql("FLUSH PRIVILEGES;")
+
+        # Second step : wp-cli commands
+        # Download Wordpress
+        try:
+            project.wp('core', 'download')
+        except DockerCommandException as e:
+            if e.args[1].find('WordPress files seem to already be present here.') == -1:
+                raise e
+        # Configure it and install it
+        if os.path.exists('wordpress/wp-config.php'):
+            print "wp-config.php already exist"
+        else:
+            project.wp('core', 'config',# '--skip-check',
+            '--dbname=%s' % conf['db']['name'],
+            '--dbuser=%s' % conf['db']['user'],
+            '--dbpass=%s' % conf['db']['pass'],
+            '--dbhost=db'
+            )
+        project.wp('core', 'install', '--url=%s' % conf['url'],
+           '--title=%s' % conf['name'], '--admin_email=%s' % conf['admin']['email'],
+           '--admin_user=%s' % conf['admin']['user'], '--admin_password=%s' %
+           conf['admin']['password'])
+
+        project.wp('option', 'set', 'siteurl', "http://%s" % conf['url'])
+        project.wp('option', 'set', 'blogname', conf['name'])
+
+        for language in conf['language']:
+            if language != 'en':
+                project.wp('core', 'language', 'install', language)
+                project.wp('core', 'language', 'activate', language)
+
+        if 'plugin' in conf:
+            for plugin in conf['plugin']:
+                project.wp('plugin', 'install', plugin)
+                project.wp('plugin', 'activate', plugin)
+
+        p = conf['project']
+
+        # Now reload our apache
+        project.docker('exec', '-ti', 'wordpress-%s' % p, 'kill', '-HUP', '1')
+        url = "http://"+project.conf['url']+"/"
+        puts(colored.green("Wordpress ready : You can now go to : %s" % url))
 
 log = logging.getLogger(__name__)
 
