@@ -306,7 +306,50 @@ Wordpress factory.
             # Skip looking up the compose file.
             handler(None, command_options)
             return
-        super(WPFactoryCommand).perform_command(options, handler, command_options)
+        if not os.path.exists('wordpress.yml'):
+            raise Exception('You need a wordpress.yml file, try :\nwpfactory init')
+        with open('wordpress.yml', 'r') as f:
+            self.config = yaml.load(f)
+        self._lazy_compose_conf()
+
+        super(WPFactoryCommand, self).perform_command(options, handler, command_options)
+
+    def _lazy_compose_conf(self):
+        if not os.path.exists('docker-compose.yml'):
+            if platform.system() == "Darwin":
+                user_uid = 1000
+            else:
+                user_uid = os.getuid()
+            port = self.config["url"].split(":")[1]
+            fig = {
+                'mailhog': {
+                    'image': 'bearstech/mailhog',
+                    'ports':[25, 8025],
+                    'hostname': 'mail.example.com'},
+                'mysql': {
+                    'ports': [3306],
+                    'image': 'bearstech/mysql'
+                },
+                'wordpress': {
+                    'image': 'bearstech/wordpress',
+                    'ports': ["80"],
+                    'hostname': 'wordpress.example.com',
+                    'volumes': [
+                        'wordpress:/var/www/test/root',
+                        'log:/var/log/apache2/',
+                        'dump:/dump'
+                    ],
+                    'links': [
+                        'mysql:db',
+                        'mailhog:mail'
+                    ],
+                    'environment': {
+                        'WORDPRESS_ID': user_uid
+                    }
+                }
+            }
+            yaml.dump(fig, open('docker-compose.yml', 'w'), explicit_start=True, default_flow_style=False)
+
 
     def init(self, _, options):
         """
