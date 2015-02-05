@@ -286,6 +286,7 @@ Wordpress factory.
       -p, --project-name NAME   Specify an alternate project name (default: directory name)
 
     Commands:
+      init      Scaffold the project, build an empty wordpress.yml file
       build     Build or rebuild services
       help      Get help on a command
       kill      Kill containers
@@ -306,6 +307,22 @@ Wordpress factory.
             handler(None, command_options)
             return
         super(WPFactoryCommand).perform_command(options, handler, command_options)
+
+    def init(self, _, options):
+        """
+        Initiliaze project.
+
+        Usage: init
+        """
+        if os.path.exists('wordpress.yml'):
+            raise Exception("wordpress.yml already exist.")
+        else:
+            cwd = os.getcwd()
+            with open('wordpress.yml', 'w') as f:
+                f.write(SCAFFOLD_TEMPLATE.format(project=cwd.split('/')[-1],
+                                                 docker_host=guess_docker_host()))
+                print "Just scaffolded the wordpress.yml file, edit it."
+                # TODO [xdg-]open -e wordpress.yml
 
     def home(self, project, options):
         """
