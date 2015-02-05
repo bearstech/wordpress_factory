@@ -44,6 +44,15 @@ import re
 import platform
 from compose.cli.command import Command
 from compose.cli.docker_client import docker_client
+from compose.cli.main import TopLevelCommand, setup_logging
+from docker.errors import APIError
+from compose.cli.errors import UserError
+from compose.project import NoSuchService, ConfigurationError
+from compose.service import BuildError, CannotBeScaledError
+from compose.cli.docopt_command import NoSuchCommand
+
+
+
 import logging
 from docker.client import Client
 from docker import utils
@@ -262,7 +271,82 @@ def guess_docker_host():
             return "localhost"
 
 
+class WPFactoryCommand(TopLevelCommand):
+    """
+Wordpress factory.
+
+    Usage:
+      docker-compose [options] [COMMAND] [ARGS...]
+      docker-compose -h|--help
+
+    Options:
+      --verbose                 Show more output
+      --version                 Print version and exit
+      -f, --file FILE           Specify an alternate compose file (default: docker-compose.yml)
+      -p, --project-name NAME   Specify an alternate project name (default: directory name)
+
+    Commands:
+      build     Build or rebuild services
+      help      Get help on a command
+      kill      Kill containers
+      logs      View output from containers
+      ps        List containers
+      rm        Remove stopped containers
+      run       Run a one-off command
+      start     Start services
+      stop      Stop services
+      restart   Restart services
+      up        Create and start containers
+      home      Open wordpress web page
+
+    """
+    def perform_command(self, options, handler, command_options):
+        if options['COMMAND'] in ['help', 'init']:
+            # Skip looking up the compose file.
+            handler(None, command_options)
+            return
+        super(WPFactoryCommand).perform_command(options, handler, command_options)
+
+    def home(self, project, options):
+        """
+        Open home page.
+
+        Usage: home
+        """
+        print "plop"
+
+
+    def config(self, project, options):
+        pass
+
+log = logging.getLogger(__name__)
+
 def main():
+    setup_logging()
+    try:
+        command = WPFactoryCommand()
+        command.sys_dispatch()
+    except KeyboardInterrupt:
+        log.error("\nAborting.")
+        sys.exit(1)
+    except (UserError, NoSuchService, ConfigurationError) as e:
+        log.error(e.msg)
+        sys.exit(1)
+    except NoSuchCommand as e:
+        log.error("No such command: %s", e.command)
+        log.error("")
+        log.error("\n".join(parse_doc_section("commands:", getdoc(e.supercommand))))
+        sys.exit(1)
+    except APIError as e:
+        log.error(e.explanation)
+        sys.exit(1)
+    except BuildError as e:
+        log.error("Service '%s' failed to build: %s" % (e.service.name, e.reason))
+        sys.exit(1)
+
+
+
+def _main():
     """
     """
     arguments = docopt(__doc__, version='Wordpress Manager %s' % __version__)
@@ -378,8 +462,12 @@ def main():
             project.build('mailhog', no_cache)
 
     elif arguments['run']:
+        command = TopLevelCommand()
+
         # Create our containers and run it
         p = project.conf['project']
+
+        command.run(p)
         def run_wordpress():
             if not os.path.exists('log'):
                 os.mkdir('log')
