@@ -332,7 +332,7 @@ Wordpress factory.
                 },
                 'wordpress': {
                     'image': 'bearstech/wordpress',
-                    'ports': ["80"],
+                    'ports': ["%s:80" % port],
                     'hostname': 'wordpress.example.com',
                     'volumes': [
                         'wordpress:/var/www/test/root',
@@ -373,8 +373,9 @@ Wordpress factory.
 
         Usage: home
         """
-        print "plop"
-
+        url = "http://%s/" % self.config['url']
+        print "Opening : %s" % url
+        webbrowser.open(url)
 
     def config(self, project, options):
         pass
