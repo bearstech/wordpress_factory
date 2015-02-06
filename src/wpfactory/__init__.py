@@ -306,6 +306,7 @@ Wordpress factory.
       sitespeed Analyze with sitespeed.io
       mail      Open mailhog page
       dump      Dump database
+      wxr       WXR exchange format
 
     """
     def perform_command(self, options, handler, command_options):
@@ -575,6 +576,14 @@ Wordpress factory.
         else:
             raise Exception()
 
+    def wxr(self, project, options):
+        """
+        WXR exchange file format
+
+        Usage: wxr export
+        """
+        if options['export']:
+            self.wp('export', '--dir=/dump/')
 
 
 log = logging.getLogger(__name__)
@@ -630,10 +639,6 @@ def _main():
 
     if arguments['config']:
         pass
-
-    elif arguments['wxr']:
-        if arguments['export']:
-            project.wp('export', '--dir=/dump/')
 
     elif arguments['dictator']:
         if arguments['export']:
