@@ -299,6 +299,8 @@ Wordpress factory.
       restart   Restart services
       up        Create and start containers
       home      Open wordpress web page
+      update    Search update for plugins and themes
+      upgrade   Upgrade them all
 
     """
     def perform_command(self, options, handler, command_options):
@@ -470,6 +472,38 @@ Wordpress factory.
             for plugin in conf['plugin']:
                 self.wp('plugin', 'install', plugin)
                 self.wp('plugin', 'activate', plugin)
+
+    def update(self, project, options):
+        """
+        Search available updates.
+
+        Usage: update
+        """
+        # FIXME the ouput is ugly
+        self.wp('cron', 'event', 'run', 'wp_version_check')
+        self.wp('cron', 'event', 'run', 'wp_update_themes')
+        self.wp('cron', 'event', 'run', 'wp_update_plugins')
+        self.wp('cron', 'event', 'run', 'wp_maybe_auto_update')
+        print self.wp('plugin', 'list', '--fields=name,version,update_version')
+        print self.wp('theme', 'list', '--fields=name,version,update_version')
+        print self.wp('core', 'check-update')
+
+    def upgrade(self, project, options):
+        """
+        Upgrade core, plugins and themes.
+
+        Usage: upgrade
+        """
+        # FIXME the ouput is ugly
+        print self.wp('plugin', 'update', '--all')
+        print self.wp('theme', 'update', '--all')
+        print self.wp('core', 'verify-checksums')
+        print self.wp('core', 'update')
+        print self.wp('core', 'update-db')
+
+
+
+
 
 
 log = logging.getLogger(__name__)
