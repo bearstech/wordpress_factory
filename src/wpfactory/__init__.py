@@ -1,50 +1,24 @@
 #!/usr/bin/env python
 # encoding:utf8
 
-"""
-Wordpress factory.
+__version__ = '0.3'
 
-Usage:
-    wpfactory scaffold
-    wpfactory build [mysql|wordpress|sitespeed|mailhog] [--no-cache]
-    wpfactory run [mysql|wordpress|mailhog] [--docker]
-    wpfactory start
-    wpfactory stop
-    wpfactory config
-    wpfactory update
-    wpfactory upgrade
-    wpfactory db export [--contents|--no-contents|--options]
-    wpfactory wxr export
-    wpfactory dictator export
-    wpfactory home
-    wpfactory mail
-    wpfactory sitespeed
-    wpfactory fig.yml
-    wpfactory test
-    wpfactory
-
-Options:
-    -h --help   Show this screen.
-    --json      Json output
-    --no-wxr    Export all except WXR stuff
-"""
-
-__version__ = '0.2'
-
-from subprocess import Popen, PIPE
-from clint.textui import colored, puts
 import os
 import sys
-import yaml
-from cStringIO import StringIO
-from docopt import docopt
 import os.path
 import webbrowser
 import re
 import platform
 import json
+import shlex
 from pydoc import getdoc
-from compose.cli.command import Command
+import logging
+
+import six
+import yaml
+# FIXME bring back the colors
+#from clint.textui import colored, puts
+
 from compose.cli.docker_client import docker_client
 from compose.cli.main import TopLevelCommand, setup_logging, parse_doc_section
 from docker.errors import APIError
@@ -52,13 +26,8 @@ from compose.cli.errors import UserError
 from compose.project import NoSuchService, ConfigurationError
 from compose.service import BuildError
 from compose.cli.docopt_command import NoSuchCommand
-
-
-
-import logging
 from docker.client import Client
 from docker import utils
-import six
 
 
 class ExecuteFutur(object):
@@ -90,7 +59,7 @@ class ExecuteFutur(object):
 def execute_return(self, container, cmd, detach=False, stdout=True, stderr=True,
             stream=False, tty=False):
     if utils.compare_version('1.15', self._version) < 0:
-        raise errors.APIError('Exec is not supported in API < 1.15')
+        raise APIError('Exec is not supported in API < 1.15')
     if isinstance(container, dict):
         container = container.get('Id')
     if isinstance(cmd, six.string_types):
@@ -129,11 +98,6 @@ hdl = logging.StreamHandler()
 logger = logging.getLogger('compose.cli.command')
 logger.addHandler(hdl)
 
-
-DOCKER_ERROR = re.compile(r'time="(.*?)" level="(.*?)" msg="(.*?)"')
-SPACES = re.compile(r'\s\s+')
-
-
 SCAFFOLD_TEMPLATE = """---
 
 # Scaffolded Wordpress Factory config file.
@@ -170,100 +134,6 @@ class DockerNotRunningException(DockerException):
 class DockerCommandException(DockerException):
     "Docker is fine, but the command not"
     pass
-
-class Project(object):
-    """Contains our project configuration and methods to execute some commands
-    in our dockers
-    """
-
-    def __init__(self):
-        self._project = None
-        if not os.path.exists('wordpress.yml'):
-            print __doc__
-            error("Can't find wordpress.yml file, use:\n$ wpfactory scaffold\nand edit it." )
-        with open('wordpress.yml', 'r') as f:
-            self.conf = yaml.load(f)
-
-    def get_client(self):
-        c = docker_client()
-        c._version = '1.16'
-        return c
-
-    def get_project(self):
-        if self._project is None:
-            c = Command()
-            cfg = c.get_config_path()
-            self._project = c.get_project(cfg)
-        return self._project
-
-    def get_container(self, name):
-        c = self.get_project().get_service(name).get_container()
-        c.client._version = '1.16' # Monkey patch, Docker > 1.2
-        return c
-
-    def execute(self, service, *args):
-        c = self.get_container(service)
-
-        r = c.client.execute_return(c.id, args, stream=False)
-        r.wait()
-        return r.inspect()
-
-    def docker(self, *args, **opts):
-        """Execute a Docker command
-        """
-        cmdline = "$ " + " ".join(['docker'] + list(args))
-        puts(colored.yellow(cmdline))
-        p = Popen(['docker'] + list(args), stdout=PIPE, stderr=PIPE, **opts)
-        f = StringIO()
-        for line in iter(p.stdout.readline, ''):
-            sys.stdout.write(line)
-            f.write(line)
-        p.wait()
-        error = p.returncode != 0
-        if error:
-            e = p.stderr.read()
-            if e.find('level="fatal" msg="An error occurred trying to connect:') != -1:
-                raise DockerNotRunningException(e)
-            m = DOCKER_ERROR.match(e)
-            if m:
-                raise DockerException(m.group(3), m.group(2))
-            f.seek(0)
-            raise DockerCommandException(e, f.read())
-        f.seek(0)
-        return f
-
-    def wp(self, *args):
-        """Execute a wp-cli command inside wordpress's docker
-        """
-        return self.get_container('wordpress').client.execute([
-            'wp', '--allow-root', '--path=/var/www/test/root',
-            '--require=/opt/dictator/dictator.php'] + list(args))
-
-    def mysql(self, *args):
-        """Execute a mysql command inside wordpress's docker
-        """
-        return self.get_container('wordpress').client.execute(['mysql', '-h',
-                                                               'db', '--password=mypass', '-e'] + list(args))
-
-    def services(self):
-        "Started services."
-        s = set()
-        project = self.conf['project']
-        for service in [SPACES.split(ps)[:-1][-1] for ps in
-                        self.docker('ps').readlines()[1:]]:
-            if service.split('-')[-1] == project:
-                s.add(service[:-(len(project)+1)])
-        return s
-
-    def build(self, name, no_cache=False):
-        here = os.path.dirname(__file__)
-        dockerfile = os.path.join(here, 'docker', name)
-        return self.get_client().build(path=dockerfile, tag='bearstech/%s' % name,
-                                nocache=no_cache)
-
-    def inspect(self, name):
-        return self.get_container(name).inspect()
-
 
 def guess_docker_host():
         d = os.environ.get('DOCKER_HOST', None)
@@ -434,7 +304,7 @@ Wordpress factory.
         """
         conf = self.config
         try:
-            o = self.mysql('SELECT 1+1;')
+            self.mysql('SELECT 1+1;')
         except DockerCommandException as e:
             if not e.args[0].startswith('ERROR 1045 (28000): Access denied for user'):
                 raise e
