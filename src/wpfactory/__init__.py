@@ -302,6 +302,7 @@ Wordpress factory.
       home      Open wordpress web page
       update    Search update for plugins and themes
       upgrade   Upgrade them all
+      sitespeed Analyze with sitespeed.io
 
     """
     def perform_command(self, options, handler, command_options):
@@ -502,9 +503,25 @@ Wordpress factory.
         print self.wp('core', 'update')
         print self.wp('core', 'update-db')
 
+    def sitespeed(self, project, options):
+        """
+        Sitespeed.io
 
-
-
+        Usage: sitespeed
+        """
+        if not os.path.exists('sitespeed.io'):
+            os.mkdir('sitespeed.io')
+        c = docker_client()
+        cwd = os.getcwd()
+        container = c.create_container(image='bearstech/sitespeed',
+                           volumes=['%s/sitespeed.io:/result' % cwd],
+                           command=['sitespeed.io', '--screenshot',
+                                    '--url', 'http://%s' % self.config['url'],
+                                    '--resultBaseDir', '/result'])
+        c.start(container=container)
+        for l in c.logs(container=container, stream=True):
+            print l
+        c.remove_container(container=container)
 
 
 log = logging.getLogger(__name__)
