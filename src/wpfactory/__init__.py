@@ -42,6 +42,7 @@ import os.path
 import webbrowser
 import re
 import platform
+import json
 from pydoc import getdoc
 from compose.cli.command import Command
 from compose.cli.docker_client import docker_client
@@ -474,6 +475,25 @@ Wordpress factory.
             for plugin in conf['plugin']:
                 self.wp('plugin', 'install', plugin)
                 self.wp('plugin', 'activate', plugin)
+
+    def build(self, project, options):
+        """
+        Build the images
+
+        Usage: build
+        """
+        c = docker_client()
+        here = os.path.dirname(__file__)
+        no_cache = False
+        for image in ['wordpress', 'mysql', 'sitespeed', 'mailhog']:
+            dockerfile = os.path.join(here, 'docker', image)
+            for line in c.build(path=dockerfile, tag='bearstech/%s' % image,
+                                nocache=no_cache, stream=True):
+                # FIXME it's ugly, build shouldn't stream raw JSON
+                l = json.loads(line)
+                if "stream" in l:
+                    print l['stream'],
+
 
     def update(self, project, options):
         """
