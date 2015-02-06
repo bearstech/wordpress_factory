@@ -393,6 +393,7 @@ Wordpress factory.
         inspect = r.inspect()
         if inspect['ExitCode'] != 0:
             raise DockerCommandException(out)
+        return out
 
     def wp(self, *args):
         return self.exec_('wordpress', 'wp', '--allow-root', '--path=/var/www/test/root/', *args)
