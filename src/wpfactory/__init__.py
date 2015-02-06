@@ -430,21 +430,11 @@ Wordpress factory.
         Usage: config
         """
         conf = self.config
-        create_user = False # Dirty but efficient because...
         try:
             o = self.mysql('SELECT 1+1;')
         except DockerCommandException as e:
             if not e.args[0].startswith('ERROR 1045 (28000): Access denied for user'):
                 raise e
-            create_user = True
-
-        if create_user:
-            self.mysql_as_root("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']), database=False)
-            self.mysql_as_root("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
-                                                                                password=conf['db']['pass']), database=False)
-            self.mysql_as_root("GRANT ALL ON {name}.* TO '{user}'@'%';".format(name=conf['db']['name'],
-                                                                        user=conf['db']['user']), database=False)
-            self.mysql_as_root("FLUSH PRIVILEGES;", database=False)
 
         if not os.path.exists('wordpress/wp-admin/index.php'):
             # Download Wordpress
