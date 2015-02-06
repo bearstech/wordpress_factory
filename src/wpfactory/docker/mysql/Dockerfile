@@ -1,12 +1,16 @@
 FROM debian:wheezy
 
-RUN echo 'mysql-server-5.5 mysql-server/root_password password mypass' | debconf-set-selections && \
-    echo 'mysql-server-5.5 mysql-server/root_password_again password mypass' | debconf-set-selections && \
-    apt-get update && apt-get -q install -y mysql-server && rm -r /var/lib/apt/lists/*
-RUN sed -i -e"s/^bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/" /etc/mysql/my.cnf
-RUN /etc/init.d/mysql start && \
-    mysql --password=mypass -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'mypass'; UPDATE mysql.user SET Grant_priv='Y' WHERE user='root' AND host='%';"
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get -q install -y --no-install-recommends mysql-server mysql-client && \
+    rm -r /var/lib/apt/lists/* /var/lib/mysql/*
+
+RUN sed -i -e"s/^bind-address/#bind-address/" /etc/mysql/my.cnf
+
+VOLUME /var/lib/mysql
+
+COPY docker-entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 
 EXPOSE 3306
 
-CMD chown -R mysql:mysql /var/lib/mysql && mysqld
+CMD ["mysqld"]
