@@ -7,7 +7,6 @@ import os
 import sys
 import os.path
 import webbrowser
-import re
 import platform
 import json
 import shlex
@@ -17,7 +16,7 @@ import logging
 import six
 import yaml
 # FIXME bring back the colors
-#from clint.textui import colored, puts
+# from clint.textui import colored, puts
 
 from compose.cli.docker_client import docker_client
 from compose.cli.main import TopLevelCommand, setup_logging, parse_doc_section
@@ -61,8 +60,9 @@ class ExecuteFutur(object):
         self.client._raise_for_status(res)
         return res.json()
 
+
 def execute_return(self, container, cmd, detach=False, stdout=True, stderr=True,
-            stream=False, tty=False):
+                   stream=False, tty=False):
     if utils.compare_version('1.15', self._version) < 0:
         raise APIError('Exec is not supported in API < 1.15')
     if isinstance(container, dict):
@@ -90,7 +90,7 @@ def execute_return(self, container, cmd, detach=False, stdout=True, stderr=True,
     # start the command
     cmd_id = res.json().get('Id')
     res = self._post_json(self._url('/exec/{0}/start'.format(cmd_id)),
-                        data=data, stream=stream)
+                          data=data, stream=stream)
     self._raise_for_status(res)
 
     return ExecuteFutur(self, cmd_id, res)
@@ -119,7 +119,6 @@ db:
 """
 
 
-
 def error(msg, source=''):
     print "\n[Error {source}] {msg}".format(source=source, msg=msg)
     sys.exit(1)
@@ -132,9 +131,11 @@ class DockerException(Exception):
 class DockerNotRunningException(DockerException):
     pass
 
+
 class DockerCommandException(DockerException):
     "Docker is fine, but the command not"
     pass
+
 
 def guess_docker_host():
         d = os.environ.get('DOCKER_HOST', None)
@@ -149,13 +150,12 @@ class WPFactoryCommand(TopLevelCommand):
 Wordpress factory.
 
     Usage:
-      docker-compose [options] [COMMAND] [ARGS...]
-      docker-compose -h|--help
+      wpfactory [options] [COMMAND] [ARGS...]
+      wpfactory -h|--help
 
     Options:
       --verbose                 Show more output
       --version                 Print version and exit
-      -f, --file FILE           Specify an alternate compose file (default: docker-compose.yml)
       -p, --project-name NAME   Specify an alternate project name (default: directory name)
 
     Commands:
@@ -187,12 +187,14 @@ Wordpress factory.
             handler(None, command_options)
             return
         if not os.path.exists('wordpress.yml'):
-            raise Exception('You need a wordpress.yml file, try :\nwpfactory init')
+            raise Exception('''You need a wordpress.yml file, try :
+wpfactory init''')
         with open('wordpress.yml', 'r') as f:
             self.config = yaml.load(f)
         self._lazy_compose_conf()
 
-        super(WPFactoryCommand, self).perform_command(options, handler, command_options)
+        super(WPFactoryCommand, self).perform_command(options, handler,
+                                                      command_options)
 
     def _lazy_compose_conf(self):
         if not os.path.exists('docker-compose.yml'):
@@ -204,7 +206,7 @@ Wordpress factory.
             fig = {
                 'mailhog': {
                     'image': 'bearstech/mailhog',
-                    'ports':[25, 8025],
+                    'ports': [25, 8025],
                     'hostname': 'mail.example.com'},
                 'mysql': {
                     'ports': [3306],
@@ -234,7 +236,8 @@ Wordpress factory.
                     }
                 }
             }
-            yaml.dump(fig, open('docker-compose.yml', 'w'), explicit_start=True, default_flow_style=False)
+            yaml.dump(fig, open('docker-compose.yml', 'w'), explicit_start=True,
+                      default_flow_style=False)
 
     def exec_(self, service, *args):
         project = self.get_project('docker-compose.yml')
@@ -255,12 +258,14 @@ Wordpress factory.
         return out
 
     def wp(self, *args):
-        return self.exec_('wordpress', 'wp', '--allow-root', '--path=/var/www/test/root/', *args)
+        return self.exec_('wordpress', 'wp', '--allow-root',
+                          '--path=/var/www/test/root/', *args)
 
     def mysql(self, sql):
-        return self.exec_('wordpress', 'mysql', '-h', 'db', '-u', self.config['db']['user'],
-                           '--password=%s' % self.config['db']['pass'],
-                           self.config['db']['name'], '-e', sql)
+        return self.exec_('wordpress', 'mysql', '-h', 'db',
+                          '-u', self.config['db']['user'],
+                          '--password=%s' % self.config['db']['pass'],
+                          self.config['db']['name'], '-e', sql)
 
     def mysql_as_root(self, sql, database=True):
         cmd = ['wordpress', 'mysql', '-h', 'db', '-u', 'root',
@@ -306,8 +311,10 @@ Wordpress factory.
         try:
             self.mysql('SELECT 1+1;')
         except DockerCommandException as e:
-            if not e.args[0].startswith('ERROR 1045 (28000): Access denied for user'):
+            if not e.args[0].startswith(
+                    'ERROR 1045 (28000): Access denied for user'):
                 raise e
+            # FIXME what happens if the DB is not ready?
 
         if not os.path.exists('wordpress/wp-admin/index.php'):
             # Download Wordpress
@@ -317,21 +324,22 @@ Wordpress factory.
         if os.path.exists('wordpress/wp-config.php'):
             print "wp-config.php already exist"
         else:
-            self.wp('core', 'config',# '--skip-check',
-            '--dbname=%s' % conf['db']['name'],
-            '--dbuser=%s' % conf['db']['user'],
-            '--dbpass=%s' % conf['db']['pass'],
-            '--dbhost=db'
-            )
+            self.wp('core', 'config',  # '--skip-check',
+                    '--dbname=%s' % conf['db']['name'],
+                    '--dbuser=%s' % conf['db']['user'],
+                    '--dbpass=%s' % conf['db']['pass'],
+                    '--dbhost=db'
+                    )
         try:
             self.wp('core', 'is-installed')
         except DockerCommandException as e:
             if e.args[0] != "":
                 raise e
             self.wp('core', 'install', '--url=%s' % conf['url'],
-            '--title=%s' % conf['name'], '--admin_email=%s' % conf['admin']['email'],
-            '--admin_user=%s' % conf['admin']['user'], '--admin_password=%s' %
-            conf['admin']['password'])
+                    '--title=%s' % conf['name'],
+                    '--admin_email=%s' % conf['admin']['email'],
+                    '--admin_user=%s' % conf['admin']['user'],
+                    '--admin_password=%s' % conf['admin']['password'])
 
         self.wp('option', 'set', 'siteurl', "http://%s" % conf['url'])
         self.wp('option', 'set', 'blogname', conf['name'])
@@ -403,10 +411,12 @@ Wordpress factory.
         c = docker_client()
         cwd = os.getcwd()
         container = c.create_container(image='bearstech/sitespeed',
-                           volumes=['%s/sitespeed.io:/result' % cwd],
-                           command=['sitespeed.io', '--screenshot',
-                                    '--url', 'http://%s' % self.config['url'],
-                                    '--resultBaseDir', '/result'])
+                                       volumes=[
+                                           '%s/sitespeed.io:/result' % cwd],
+                                       command=['sitespeed.io', '--screenshot',
+                                                '--url',
+                                                'http://%s' % self.config['url'],
+                                                '--resultBaseDir', '/result'])
         c.start(container=container)
         for l in c.logs(container=container, stream=True):
             print l
@@ -419,7 +429,8 @@ Wordpress factory.
         Usage: mail
         """
         project = self.get_project('docker-compose.yml')
-        port = project.get_service('mailhog').get_container().inspect()["NetworkSettings"]["Ports"]["8025/tcp"][0]["HostPort"]
+        port = project.get_service('mailhog').get_container().inspect()[
+            "NetworkSettings"]["Ports"]["8025/tcp"][0]["HostPort"]
         url = "http://%s:%s" % (guess_docker_host(), port)
         print "Opening : %s" % url
         webbrowser.open(url)
@@ -436,10 +447,10 @@ Wordpress factory.
                           'wp_commentmeta'}
         if options['content']:
             self.wp('db', 'export', '/dump/dump-contents.sql',
-                        '--tables=%s' % ','.join(contents_table))
+                    '--tables=%s' % ','.join(contents_table))
         elif options['option']:
             self.wp('db', 'export', '/dump/dump-options.sql',
-                        '--tables=wp_options')
+                    '--tables=wp_options')
         elif options['all']:
             self.wp('db', 'export', '/dump/dump.sql')
         else:
@@ -463,7 +474,8 @@ Wordpress factory.
         # FIXME configure the wp-cli plugin path
         if options['export']:
             self.wp('dictator', 'export', 'site', '/dump/dictator-site.yml',
-                       '--force')
+                    '--force')
+
 
 def main():
     setup_logging()
@@ -479,13 +491,15 @@ def main():
     except NoSuchCommand as e:
         log.error("No such command: %s", e.command)
         log.error("")
-        log.error("\n".join(parse_doc_section("commands:", getdoc(e.supercommand))))
+        log.error("\n".join(parse_doc_section("commands:",
+                                              getdoc(e.supercommand))))
         sys.exit(1)
     except APIError as e:
         log.error(e.explanation)
         sys.exit(1)
     except BuildError as e:
-        log.error("Service '%s' failed to build: %s" % (e.service.name, e.reason))
+        log.error("Service '%s' failed to build: %s" %
+                  (e.service.name, e.reason))
         sys.exit(1)
 
 if __name__ == '__main__':
