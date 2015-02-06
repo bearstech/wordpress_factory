@@ -42,13 +42,14 @@ import os.path
 import webbrowser
 import re
 import platform
+from pydoc import getdoc
 from compose.cli.command import Command
 from compose.cli.docker_client import docker_client
-from compose.cli.main import TopLevelCommand, setup_logging
+from compose.cli.main import TopLevelCommand, setup_logging, parse_doc_section
 from docker.errors import APIError
 from compose.cli.errors import UserError
 from compose.project import NoSuchService, ConfigurationError
-from compose.service import BuildError, CannotBeScaledError
+from compose.service import BuildError
 from compose.cli.docopt_command import NoSuchCommand
 
 
