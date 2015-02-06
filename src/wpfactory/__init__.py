@@ -305,6 +305,7 @@ Wordpress factory.
       upgrade   Upgrade them all
       sitespeed Analyze with sitespeed.io
       mail      Open mailhog page
+      dump      Dump database
 
     """
     def perform_command(self, options, handler, command_options):
@@ -552,6 +553,28 @@ Wordpress factory.
         print "Opening : %s" % url
         webbrowser.open(url)
 
+    def dump(self, project, options):
+        """
+        Database
+
+        Usage: dump (content|option|all)
+
+        """
+        contents_table = {'wp_users', 'wp_usermeta', 'wp_posts', 'wp_comments',
+                          'wp_links', 'wp_postmeta', 'wp_terms',
+                          'wp_term_taxonomy', 'wp_term_relationships',
+                          'wp_commentmeta'}
+        if options['content']:
+            self.wp('db', 'export', '/dump/dump-contents.sql',
+                        '--tables=%s' % ','.join(contents_table))
+        elif options['option']:
+            self.wp('db', 'export', '/dump/dump-options.sql',
+                        '--tables=wp_options')
+        elif options['all']:
+            self.wp('db', 'export', '/dump/dump.sql')
+        else:
+            raise Exception()
+
 
 
 log = logging.getLogger(__name__)
@@ -607,27 +630,6 @@ def _main():
 
     if arguments['config']:
         pass
-
-    elif arguments['db']:
-        if arguments['export']:
-            contents_table = {'wp_users', 'wp_usermeta', 'wp_posts',
-                              'wp_comments', 'wp_links', 'wp_postmeta',
-                              'wp_terms', 'wp_term_taxonomy',
-                              'wp_term_relationships', 'wp_commentmeta'}
-            if arguments['--contents']:
-                project.wp('db', 'export', '/dump/dump-contents.sql',
-                           '--tables=%s' % ','.join(contents_table))
-            elif arguments['--options']:
-                project.wp('db', 'export', '/dump/dump-options.sql',
-                           '--tables=wp_options')
-            elif arguments['--no-contents']:
-                tables = set([a[:-2] for a in
-                          project.wp('db', 'tables', '--quiet').readlines()])
-                tables -= contents_table
-                project.wp('db', 'export', '/dump/dump-no-contents.sql',
-                           '--tables=%s' % ','.join(tables))
-            else:
-                project.wp('db', 'export', '/dump/dump.sql')
 
     elif arguments['wxr']:
         if arguments['export']:
