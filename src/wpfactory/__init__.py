@@ -395,13 +395,20 @@ Wordpress factory.
             raise DockerCommandException(out)
 
     def wp(self, *args):
-        return self.exec_('wordpress', 'wp', *args)
+        return self.exec_('wordpress', 'wp', '--allow-root', '--path=/var/www/test/root/', *args)
 
     def mysql(self, sql):
         return self.exec_('wordpress', 'mysql', '-h', 'db', '-u', self.config['db']['user'],
                            '--password=%s' % self.config['db']['pass'],
                            self.config['db']['name'], '-e', sql)
 
+    def mysql_as_root(self, sql, database=True):
+        cmd = ['wordpress', 'mysql', '-h', 'db', '-u', 'root',
+               '--password=mypass']
+        if database:
+            cmd.append(self.config['db']['name'])
+        cmd += ['-e', sql]
+        return self.exec_(*cmd)
 
     def config(self, project, options):
         """
@@ -419,12 +426,12 @@ Wordpress factory.
             create_user = True
 
         if create_user:
-            self.mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
-            self.mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
-                                                                                password=conf['db']['pass']))
-            self.mysql("GRANT ALL ON {name}.* TO '{user}'@'%';".format(name=conf['db']['name'],
-                                                                        user=conf['db']['user']))
-            self.mysql("FLUSH PRIVILEGES;")
+            self.mysql_as_root("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']), database=False)
+            self.mysql_as_root("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
+                                                                                password=conf['db']['pass']), database=False)
+            self.mysql_as_root("GRANT ALL ON {name}.* TO '{user}'@'%';".format(name=conf['db']['name'],
+                                                                        user=conf['db']['user']), database=False)
+            self.mysql_as_root("FLUSH PRIVILEGES;", database=False)
 
         if not os.path.exists('wordpress/wp-admin/index.php'):
             # Download Wordpress
