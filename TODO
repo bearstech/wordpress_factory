@@ -1,6 +1,11 @@
 TODO
 ====
 
+ * Modify /etc/hosts with dev name
+ * Handling vhost with a HAproxy
+ * Varnish as an option
+ * Memcache as an option
+ * Local storage for mysql
  * Use logging (with colorlog?)
  * More detailled help
  * etc...
