@@ -2,16 +2,16 @@ Wordpress factory
 =================
 
 A factory to prepare, deploy, upgrade your Wordpress.
-Also Docker.
 
-No more LAMP, XAMP and other strange tools.
+No more MAMP, XAMP and other strange tools.
 Your Worpdress runs on a Linux, the same used in production, you work with your tool, and deploy as usual.
 
 The magic
 ---------
 
-This is no magic. Wordpress factory is just a wrapper of Docker and wp-cli.
-Data stays on your hard drive, action are done in Docker (or inside a virtualbox, if you are using Mac OSX).
+This is no magic. Wordpress factory is just a wrapper of
+[Docker compose](https://github.com/docker/fig) and [wp-cli](http://wp-cli.org/).
+Data stays on your hard drive, action are done in Docker (and inside a virtualbox, if you are using Mac OSX).
 
 Install
 -------
@@ -30,7 +30,7 @@ Demo time
 
 Scaffolding
 
-    ./wpfactory scaffold
+    ./wpfactory init
 
 Modify the wordpress.yml file
 
@@ -40,7 +40,7 @@ Prepare your containers
 
 Start services
 
-    ./wpfactory run
+    ./wpfactory up
 
 Configure your wordpress
 
