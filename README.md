@@ -25,14 +25,6 @@ You need python and virtualenv to build the application,
 
 The application is in ./bin/wpfactory
 
-### PEX install
-
-You can build a package, to handle all parts of the install, and distribute it.
-
-    make pex
-
-Enjoy your `wpfactory` file.
-
 Demo time
 ---------
 
