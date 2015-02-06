@@ -304,6 +304,7 @@ Wordpress factory.
       update    Search update for plugins and themes
       upgrade   Upgrade them all
       sitespeed Analyze with sitespeed.io
+      mail      Open mailhog page
 
     """
     def perform_command(self, options, handler, command_options):
@@ -548,6 +549,19 @@ Wordpress factory.
         for l in c.logs(container=container, stream=True):
             print l
         c.remove_container(container=container)
+
+    def mail(self, project, options):
+        """
+        Mailhog
+
+        Usage: mail
+        """
+        project = self.get_project('docker-compose.yml')
+        port = project.get_service('mailhog').get_container().inspect()["NetworkSettings"]["Ports"]["8025/tcp"][0]["HostPort"]
+        url = "http://%s:%s" % (guess_docker_host(), port)
+        print "Opening : %s" % url
+        webbrowser.open(url)
+
 
 
 log = logging.getLogger(__name__)
