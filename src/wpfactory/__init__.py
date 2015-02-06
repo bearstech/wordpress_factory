@@ -333,7 +333,13 @@ Wordpress factory.
                     'hostname': 'mail.example.com'},
                 'mysql': {
                     'ports': [3306],
-                    'image': 'bearstech/mysql'
+                    'image': 'bearstech/mysql',
+                    'environment': {
+                        'MYSQL_ROOT_PASSWORD': 'mypass',
+                        'MYSQL_DATABASE': self.config['db']['name'],
+                        'MYSQL_USER': self.config['db']['user'],
+                        'MYSQL_PASSWORD': self.config['db']['pass'],
+                    }
                 },
                 'wordpress': {
                     'image': 'bearstech/wordpress',
@@ -598,35 +604,7 @@ def _main():
     if arguments['config']:
         conf = project.conf
 
-        # First step in our configuration, create users and tables for our wordpress
-
-        create_user = False # Dirty but efficient because...
-        try:
-            r = project.docker('exec', '-ti', 'wordpress-%s' % conf['project'],
-                       'mysql', '-h', 'db', '-u', conf['db']['user'],
-                       '--password=%s' % conf['db']['pass'],
-                       conf['db']['name'], '-e', 'SELECT 1+1;')
-        except DockerCommandException as e:
-            # ...Sometimes cmd errors will propagate to docker exec
-            if not e.args[1].startswith('ERROR 1045 (28000): Access denied for user'):
-                raise e
-            create_user = True
-        else:
-            result = r.read()
-            if "ERROR" in result:
-                # ...Sometimes docker exec will return 0 but the cmd failed
-                if not result.startswith('ERROR 1045 (28000): Access denied for user'):
-                    raise DockerException(result)
-                create_user = True
-        if create_user:
-            project.mysql("CREATE DATABASE IF NOT EXISTS {name};".format(name=conf['db']['name']))
-            project.mysql("CREATE USER '{user}'@'%' IDENTIFIED BY '{password}';".format(user=conf['db']['user'],
-                                                                                password=conf['db']['pass']))
-            project.mysql("GRANT ALL ON {name}.* TO '{user}'@'%';".format(name=conf['db']['name'],
-                                                                        user=conf['db']['user']))
-            project.mysql("FLUSH PRIVILEGES;")
-
-        # Second step : wp-cli commands
+        # First step : wp-cli commands
         # Download Wordpress
         try:
             project.wp('core', 'download')
@@ -832,7 +810,13 @@ def _main():
                 'hostname': 'mail.example.com'},
             'mysql': {
                 'ports': [3306],
-                'image': 'bearstech/mysql'
+                'image': 'bearstech/mysql',
+                'environment': {
+                    'MYSQL_ROOT_PASSWORD': 'mypass',
+                    'MYSQL_DATABASE': conf['db']['name'],
+                    'MYSQL_USER': conf['db']['user'],
+                    'MYSQL_PASSWORD': conf['db']['pass'],
+                }
             },
             'wordpress': {
                 'image': 'bearstech/wordpress',
