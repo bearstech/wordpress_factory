@@ -307,6 +307,7 @@ Wordpress factory.
       mail      Open mailhog page
       dump      Dump database
       wxr       WXR exchange format
+      dictator  Dictator flat configuration
 
     """
     def perform_command(self, options, handler, command_options):
@@ -585,6 +586,17 @@ Wordpress factory.
         if options['export']:
             self.wp('export', '--dir=/dump/')
 
+    def dictator(self, project, options):
+        """
+        Dictator
+
+        Usage: dictator export
+        """
+        # FIXME configure the wp-cli plugin path
+        if options['export']:
+            self.wp('dictator', 'export', 'site', '/dump/dictator-site.yml',
+                       '--force')
+
 
 log = logging.getLogger(__name__)
 
@@ -609,45 +621,6 @@ def main():
         sys.exit(1)
     except BuildError as e:
         log.error("Service '%s' failed to build: %s" % (e.service.name, e.reason))
-        sys.exit(1)
-
-
-
-def _main():
-    """
-    """
-    arguments = docopt(__doc__, version='Wordpress Manager %s' % __version__)
-
-    cwd = os.getcwd()
-
-    if arguments['scaffold']:
-        # [FIXME] boot2docker can share folder on /tmp/ path
-
-        if not os.path.exists('wordpress'):
-            os.makedirs('wordpress')
-        if os.path.exists('wordpress.yml'):
-            error("wordpress.yml already exist.")
-        else:
-            with open('wordpress.yml', 'w') as f:
-                f.write(SCAFFOLD_TEMPLATE.format(project=cwd.split('/')[-1],
-                                                 docker_host=guess_docker_host()))
-                print "Just scaffolded the wordpress.yml file, edit it."
-        return
-
-    else:
-        project = Project()
-
-    if arguments['config']:
-        pass
-
-    elif arguments['dictator']:
-        if arguments['export']:
-            project.wp('dictator', 'export', 'site', '/dump/dictator-site.yml',
-                       '--force')
-
-    else:
-        print "Unknown command"
-        print __doc__
         sys.exit(1)
 
 if __name__ == '__main__':
