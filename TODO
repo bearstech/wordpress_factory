@@ -6,6 +6,8 @@ TODO
  * Varnish as an option
  * Memcache as an option
  * Local storage for mysql
+ * Debian package
+ * Macbrew package
  * Use logging (with colorlog?)
  * More detailled help
  * etc...
