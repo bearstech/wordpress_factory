@@ -29,6 +29,11 @@ from compose.cli.docopt_command import NoSuchCommand
 from docker.client import Client
 from docker import utils
 
+log = logging.getLogger(__name__)
+hdl = logging.StreamHandler()
+logger = logging.getLogger('compose.cli.command')
+logger.addHandler(hdl)
+
 
 class ExecuteFutur(object):
 
@@ -90,13 +95,9 @@ def execute_return(self, container, cmd, detach=False, stdout=True, stderr=True,
 
     return ExecuteFutur(self, cmd_id, res)
 
-
 # This is monkey patch
 Client.execute_return = execute_return
 
-hdl = logging.StreamHandler()
-logger = logging.getLogger('compose.cli.command')
-logger.addHandler(hdl)
 
 SCAFFOLD_TEMPLATE = """---
 
@@ -235,33 +236,6 @@ Wordpress factory.
             }
             yaml.dump(fig, open('docker-compose.yml', 'w'), explicit_start=True, default_flow_style=False)
 
-
-    def init(self, _, options):
-        """
-        Initiliaze project.
-
-        Usage: init
-        """
-        if os.path.exists('wordpress.yml'):
-            raise Exception("wordpress.yml already exist.")
-        else:
-            cwd = os.getcwd()
-            with open('wordpress.yml', 'w') as f:
-                f.write(SCAFFOLD_TEMPLATE.format(project=cwd.split('/')[-1],
-                                                 docker_host=guess_docker_host()))
-                print "Just scaffolded the wordpress.yml file, edit it."
-                # TODO [xdg-]open -e wordpress.yml
-
-    def home(self, project, options):
-        """
-        Open home page.
-
-        Usage: home
-        """
-        url = "http://%s/" % self.config['url']
-        print "Opening : %s" % url
-        webbrowser.open(url)
-
     def exec_(self, service, *args):
         project = self.get_project('docker-compose.yml')
         wp = project.get_service(service)
@@ -295,6 +269,32 @@ Wordpress factory.
             cmd.append(self.config['db']['name'])
         cmd += ['-e', sql]
         return self.exec_(*cmd)
+
+    def init(self, _, options):
+        """
+        Initiliaze project.
+
+        Usage: init
+        """
+        if os.path.exists('wordpress.yml'):
+            raise Exception("wordpress.yml already exist.")
+        else:
+            cwd = os.getcwd()
+            with open('wordpress.yml', 'w') as f:
+                f.write(SCAFFOLD_TEMPLATE.format(project=cwd.split('/')[-1],
+                                                 docker_host=guess_docker_host()))
+                print "Just scaffolded the wordpress.yml file, edit it."
+                # TODO [xdg-]open -e wordpress.yml
+
+    def home(self, project, options):
+        """
+        Open home page.
+
+        Usage: home
+        """
+        url = "http://%s/" % self.config['url']
+        print "Opening : %s" % url
+        webbrowser.open(url)
 
     def config(self, project, options):
         """
@@ -364,7 +364,6 @@ Wordpress factory.
                 if "stream" in l:
                     print l['stream'],
 
-
     def update(self, project, options):
         """
         Search available updates.
@@ -430,7 +429,6 @@ Wordpress factory.
         Database
 
         Usage: dump (content|option|all)
-
         """
         contents_table = {'wp_users', 'wp_usermeta', 'wp_posts', 'wp_comments',
                           'wp_links', 'wp_postmeta', 'wp_terms',
@@ -466,9 +464,6 @@ Wordpress factory.
         if options['export']:
             self.wp('dictator', 'export', 'site', '/dump/dictator-site.yml',
                        '--force')
-
-
-log = logging.getLogger(__name__)
 
 def main():
     setup_logging()
