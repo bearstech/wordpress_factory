@@ -6,7 +6,7 @@ setup(
     name='wpfactory',
     description='A factory to prepare, deploy, upgrade your Wordpress.'+
     " Also Docker.",
-    version='0.2',
+    version='0.3',
     author='Mathieu Lecarme',
     author_email='mlecarme@bearstech.com',
     maintainer='Johan Charpentier',
@@ -22,7 +22,6 @@ setup(
         'console_scripts': ['wpfactory=wpfactory:main']
     },
     install_requires=[
-        'docopt',
         'pyyaml',
         'clint',
         'requests<2.5',
