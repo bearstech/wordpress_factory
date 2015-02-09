@@ -179,6 +179,7 @@ Wordpress factory.
       dump      Dump database
       wxr       WXR exchange format
       dictator  Dictator flat configuration
+      doctor    Checkup for broken factory
 
     """
     def perform_command(self, options, handler, command_options):
@@ -475,6 +476,27 @@ wpfactory init''')
         if options['export']:
             self.wp('dictator', 'export', 'site', '/dump/dictator-site.yml',
                     '--force')
+
+    def doctor(self, project, options):
+        """
+        Doctor
+
+        Usage: doctor
+        """
+        c = docker_client()
+        assert "OK" == c.ping()
+        if os.path.exists('docker-compose.yml'):
+            os.unlink('docker-compose.yml')
+        self._lazy_compose_conf()
+        project = self.get_project('docker-compose.yml')
+        for name in ['wordpress', 'mailhog', 'mysql']:
+            service = project.get_service(name)
+            container = service.get_container()
+            assert container.is_running
+            if name == "wordpress":
+                os.path.abspath('wordpress') == \
+                    container.inspect()['Volumes']['/var/www/test/root']
+        print "Everything looks ok."
 
 
 def main():
