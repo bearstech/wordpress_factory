@@ -246,7 +246,7 @@ wpfactory init''')
         container = wp.get_container()
         assert container.is_running
         c = docker_client()
-        c._version = '1.16'
+        c._version = '1.15'
 
         cmd = list(args)
         print cmd
