@@ -8,6 +8,9 @@ TODO
  * Local storage for mysql
  * Debian package
  * Macbrew package
+ * Github release
+ * CI for your Wordpress
+ * Different flavor : php-fpm + nginx
  * Use logging (with colorlog?)
  * More detailled help
  * etc...
