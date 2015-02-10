@@ -10,12 +10,16 @@ RUN apt-get update && apt-get -y install \
 RUN wget https://github.com/wp-cli/wp-cli/releases/download/v0.18.0/wp-cli-0.18.0.phar -O /usr/local/bin/wp
 RUN chmod +x /usr/local/bin/wp
 #RUN mkdir -p /root/.wp-cli/
-ADD wp-cli.yml /etc/wp-cli.yml
+#ADD wp-cli.yml /etc/wp-cli.yml
+
 ENV WP_CLI_CONFIG_PATH /etc/wp-cli.yml
+ENV WP_CLI_ROOT_PATH /var/www/test/root
 
 WORKDIR /opt/
+
 RUN git clone https://github.com/danielbachhuber/dictator.git
 
-VOLUME /var/www/test/root
+COPY docker-entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 
-CMD wp help
+CMD ["wp", "help", "--allow-root"]
