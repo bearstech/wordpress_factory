@@ -11,7 +11,7 @@ RUN wget https://github.com/wp-cli/wp-cli/releases/download/v0.18.0/wp-cli-0.18.
 RUN chmod +x /usr/local/bin/wp
 #RUN mkdir -p /root/.wp-cli/
 ADD wp-cli.yml /etc/wp-cli.yml
-#ENV WP_CLI_CONFIG_PATH /etc/wp-cli.yml
+ENV WP_CLI_CONFIG_PATH /etc/wp-cli.yml
 
 WORKDIR /opt/
 RUN git clone https://github.com/danielbachhuber/dictator.git
