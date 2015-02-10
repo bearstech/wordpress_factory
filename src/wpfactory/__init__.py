@@ -111,6 +111,7 @@ Wordpress factory.
       wxr       WXR exchange format
       dictator  Dictator flat configuration
       doctor    Checkup for broken factory
+      wp        Run wp-cli command
 
     """
     def perform_command(self, options, handler, command_options):
@@ -166,6 +167,16 @@ wpfactory init''')
                     'environment': {
                         'WORDPRESS_ID': user_uid
                     }
+                },
+                'wpcli': {
+                    'image': 'bearstech/wpcli',
+                    'volumes_from': [
+                        'wordpress'
+                    ],
+                    'links': [
+                        'mysql:db'
+                    ],
+                    'user': user_uid
                 }
             }
             yaml.dump(fig, open('docker-compose.yml', 'w'), explicit_start=True,
@@ -435,6 +446,24 @@ wpfactory init''')
                 os.path.abspath('wordpress') == \
                     container.inspect()['Volumes']['/var/www/test/root']
         print "Everything looks ok."
+
+    def wp(self, project, options):
+        """
+        WP-cli
+
+        Usage: wp [ARGS...]
+        """
+        options['SERVICE'] = 'wpcli'
+        options['COMMAND'] = 'wp'
+        options['--rm'] = True
+        options['--allow-insecure-ssl'] = False
+        options['-d'] = False
+        options['--entrypoint'] = False
+        options['--no-deps'] = False
+        options['--service-ports'] = False
+        options['-T'] = False
+        options['-e'] = False
+        return self.run(project, options)
 
 
 def main():
