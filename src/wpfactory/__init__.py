@@ -485,6 +485,8 @@ wpfactory init''')
         """
         c = docker_client()
         assert "OK" == c.ping()
+        if utils.compare_version('1.15', c.version()['ApiVersion']) < 0:
+            raise Exception('Your docker is too old.')
         if os.path.exists('docker-compose.yml'):
             os.unlink('docker-compose.yml')
         self._lazy_compose_conf()
