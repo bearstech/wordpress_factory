@@ -300,7 +300,7 @@ wpfactory init''')
         c = docker_client()
         here = os.path.dirname(__file__)
         no_cache = False
-        for image in ['wordpress', 'mysql', 'sitespeed', 'mailhog']:
+        for image in ['wordpress', 'mysql', 'sitespeed', 'mailhog', 'wpcli']:
             dockerfile = os.path.join(here, 'docker', image)
             for line in c.build(path=dockerfile, tag='bearstech/%s' % image,
                                 nocache=no_cache, stream=True):
