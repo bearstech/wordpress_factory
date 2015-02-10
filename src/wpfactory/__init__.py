@@ -9,11 +9,9 @@ import os.path
 import webbrowser
 import platform
 import json
-import shlex
 from pydoc import getdoc
 import logging
 
-import six
 import yaml
 # FIXME bring back the colors
 # from clint.textui import colored, puts
@@ -25,78 +23,11 @@ from compose.cli.errors import UserError
 from compose.project import NoSuchService, ConfigurationError
 from compose.service import BuildError
 from compose.cli.docopt_command import NoSuchCommand
-from docker.client import Client
-from docker import utils
 
 log = logging.getLogger(__name__)
 hdl = logging.StreamHandler()
 logger = logging.getLogger('compose.cli.command')
 logger.addHandler(hdl)
-
-
-class ExecuteFutur(object):
-
-    def __init__(self, client, command_id, flow):
-        self.client = client
-        self.command_id = command_id
-        self.flow = flow
-
-    def __iter__(self):
-        return self.flow
-
-    def wait(self):
-        if six.PY3:
-            return bytes().join(
-                [x for x in self.client._multiplexed_buffer_helper(self.flow)]
-            )
-        else:
-            return str().join(
-                [x for x in self.client._multiplexed_buffer_helper(self.flow)]
-            )
-
-    def inspect(self):
-        url = self.client._url('/exec/{0}/json'.format(self.command_id))
-        res = self.client._get(url)
-        self.client._raise_for_status(res)
-        return res.json()
-
-
-def execute_return(self, container, cmd, detach=False, stdout=True, stderr=True,
-                   stream=False, tty=False):
-    if utils.compare_version('1.15', self._version) < 0:
-        raise APIError('Exec is not supported in API < 1.15')
-    if isinstance(container, dict):
-        container = container.get('Id')
-    if isinstance(cmd, six.string_types):
-        cmd = shlex.split(str(cmd))
-
-    data = {
-        'Container': container,
-        'User': '',
-        'Privileged': False,
-        'Tty': tty,
-        'AttachStdin': False,
-        'AttachStdout': stdout,
-        'AttachStderr': stderr,
-        'Detach': detach,
-        'Cmd': cmd
-    }
-
-    # create the command
-    url = self._url('/containers/{0}/exec'.format(container))
-    res = self._post_json(url, data=data)
-    self._raise_for_status(res)
-
-    # start the command
-    cmd_id = res.json().get('Id')
-    res = self._post_json(self._url('/exec/{0}/start'.format(cmd_id)),
-                          data=data, stream=stream)
-    self._raise_for_status(res)
-
-    return ExecuteFutur(self, cmd_id, res)
-
-# This is monkey patch
-Client.execute_return = execute_return
 
 
 SCAFFOLD_TEMPLATE = """---
@@ -249,13 +180,20 @@ wpfactory init''')
         c = docker_client()
         c._version = '1.15'
 
-        cmd = list(args)
-        print cmd
-        r = c.execute_return(container.id, cmd, stream=False)
-        out = r.wait()
-        inspect = r.inspect()
-        if inspect['ExitCode'] != 0:
-            raise DockerCommandException(out)
+
+        # Because we can't get status code from exec in 1.15, here come da
+        # shitty fix
+        inner_cmd = " ".join(list(args))
+        print inner_cmd
+        inner_cmd += "&& echo OK || echo NOPE"
+        cmd = ['sh', '-c', "%s" %inner_cmd]
+
+        r = c.execute(container.id, cmd, stream=True)
+        out = [l for l in r]
+        if not "OK\n" in out:
+            command_result = ''.join(out)
+            log.error(command_result)
+            raise DockerCommandException("Command exited with non null status")
         return out
 
     def wp(self, *args):
@@ -266,7 +204,7 @@ wpfactory init''')
         return self.exec_('wordpress', 'mysql', '-h', 'db',
                           '-u', self.config['db']['user'],
                           '--password=%s' % self.config['db']['pass'],
-                          self.config['db']['name'], '-e', sql)
+                          self.config['db']['name'], '-e', '"%s"' % sql)
 
     def mysql_as_root(self, sql, database=True):
         cmd = ['wordpress', 'mysql', '-h', 'db', '-u', 'root',
@@ -334,16 +272,14 @@ wpfactory init''')
         try:
             self.wp('core', 'is-installed')
         except DockerCommandException as e:
-            if e.args[0] != "":
-                raise e
             self.wp('core', 'install', '--url=%s' % conf['url'],
-                    '--title=%s' % conf['name'],
+                    '--title="%s"' % conf['name'],
                     '--admin_email=%s' % conf['admin']['email'],
                     '--admin_user=%s' % conf['admin']['user'],
                     '--admin_password=%s' % conf['admin']['password'])
 
         self.wp('option', 'set', 'siteurl', "http://%s" % conf['url'])
-        self.wp('option', 'set', 'blogname', conf['name'])
+        self.wp('option', 'set', 'blogname', '"%s"' % conf['name'])
 
         for language in conf['language']:
             if language != 'en':
