@@ -207,7 +207,7 @@ wpfactory init''')
             raise DockerCommandException("Command exited with non null status")
         return out
 
-    def wp(self, *args):
+    def _wp(self, *args):
         return self.exec_('wordpress', 'wp', '--allow-root',
                           '--path=/var/www/test/root/', *args)
 
@@ -268,39 +268,39 @@ wpfactory init''')
 
         if not os.path.exists('wordpress/wp-admin/index.php'):
             # Download Wordpress
-            self.wp('core', 'download')
+            self._wp('core', 'download')
 
         # Configure it and install it
         if os.path.exists('wordpress/wp-config.php'):
             print "wp-config.php already exist"
         else:
-            self.wp('core', 'config',  # '--skip-check',
+            self._wp('core', 'config',  # '--skip-check',
                     '--dbname=%s' % conf['db']['name'],
                     '--dbuser=%s' % conf['db']['user'],
                     '--dbpass=%s' % conf['db']['pass'],
                     '--dbhost=db'
                     )
         try:
-            self.wp('core', 'is-installed')
+            self._wp('core', 'is-installed')
         except DockerCommandException as e:
-            self.wp('core', 'install', '--url=%s' % conf['url'],
+            self._wp('core', 'install', '--url=%s' % conf['url'],
                     '--title="%s"' % conf['name'],
                     '--admin_email=%s' % conf['admin']['email'],
                     '--admin_user=%s' % conf['admin']['user'],
                     '--admin_password=%s' % conf['admin']['password'])
 
-        self.wp('option', 'set', 'siteurl', "http://%s" % conf['url'])
-        self.wp('option', 'set', 'blogname', '"%s"' % conf['name'])
+        self._wp('option', 'set', 'siteurl', "http://%s" % conf['url'])
+        self._wp('option', 'set', 'blogname', '"%s"' % conf['name'])
 
         for language in conf['language']:
             if language != 'en':
-                self.wp('core', 'language', 'install', language)
-                self.wp('core', 'language', 'activate', language)
+                self._wp('core', 'language', 'install', language)
+                self._wp('core', 'language', 'activate', language)
 
         if 'plugin' in conf:
             for plugin in conf['plugin']:
-                self.wp('plugin', 'install', plugin)
-                self.wp('plugin', 'activate', plugin)
+                self._wp('plugin', 'install', plugin)
+                self._wp('plugin', 'activate', plugin)
 
     def build(self, project, options):
         """
@@ -327,13 +327,13 @@ wpfactory init''')
         Usage: update
         """
         # FIXME the ouput is ugly
-        self.wp('cron', 'event', 'run', 'wp_version_check')
-        self.wp('cron', 'event', 'run', 'wp_update_themes')
-        self.wp('cron', 'event', 'run', 'wp_update_plugins')
-        self.wp('cron', 'event', 'run', 'wp_maybe_auto_update')
-        print self.wp('plugin', 'list', '--fields=name,version,update_version')
-        print self.wp('theme', 'list', '--fields=name,version,update_version')
-        print self.wp('core', 'check-update')
+        self._wp('cron', 'event', 'run', 'wp_version_check')
+        self._wp('cron', 'event', 'run', 'wp_update_themes')
+        self._wp('cron', 'event', 'run', 'wp_update_plugins')
+        self._wp('cron', 'event', 'run', 'wp_maybe_auto_update')
+        print self._wp('plugin', 'list', '--fields=name,version,update_version')
+        print self._wp('theme', 'list', '--fields=name,version,update_version')
+        print self._wp('core', 'check-update')
 
     def upgrade(self, project, options):
         """
@@ -342,11 +342,11 @@ wpfactory init''')
         Usage: upgrade
         """
         # FIXME the ouput is ugly
-        print self.wp('plugin', 'update', '--all')
-        print self.wp('theme', 'update', '--all')
-        print self.wp('core', 'verify-checksums')
-        print self.wp('core', 'update')
-        print self.wp('core', 'update-db')
+        print self._wp('plugin', 'update', '--all')
+        print self._wp('theme', 'update', '--all')
+        print self._wp('core', 'verify-checksums')
+        print self._wp('core', 'update')
+        print self._wp('core', 'update-db')
 
     def sitespeed(self, project, options):
         """
@@ -394,13 +394,13 @@ wpfactory init''')
                           'wp_term_taxonomy', 'wp_term_relationships',
                           'wp_commentmeta'}
         if options['content']:
-            self.wp('db', 'export', '/dump/dump-contents.sql',
+            self._wp('db', 'export', '/dump/dump-contents.sql',
                     '--tables=%s' % ','.join(contents_table))
         elif options['option']:
-            self.wp('db', 'export', '/dump/dump-options.sql',
+            self._wp('db', 'export', '/dump/dump-options.sql',
                     '--tables=wp_options')
         elif options['all']:
-            self.wp('db', 'export', '/dump/dump.sql')
+            self._wp('db', 'export', '/dump/dump.sql')
         else:
             raise Exception()
 
@@ -411,7 +411,7 @@ wpfactory init''')
         Usage: wxr export
         """
         if options['export']:
-            self.wp('export', '--dir=/dump/')
+            self._wp('export', '--dir=/dump/')
 
     def dictator(self, project, options):
         """
@@ -421,7 +421,7 @@ wpfactory init''')
         """
         # FIXME configure the wp-cli plugin path
         if options['export']:
-            self.wp('dictator', 'export', 'site', '/dump/dictator-site.yml',
+            self._wp('dictator', 'export', 'site', '/dump/dictator-site.yml',
                     '--force')
 
     def doctor(self, project, options):
