@@ -1,4 +1,5 @@
 *.pid
+*.pyc
 bin
 lib
 include
@@ -9,6 +10,8 @@ dump
 log
 wordpress
 src/wpfactory.egg-info/
-wpfactory
+./wpfactory
 sitespeed.io
 fig.yml
+docker-compose.yml
+./dist
