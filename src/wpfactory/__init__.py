@@ -208,6 +208,50 @@ wpfactory init''')
         return self.exec_('wordpress', 'wp', '--allow-root',
                           '--path=/var/www/test/root/', *args)
 
+    def wpcli(self, cmd):
+        """Starts a container with a wpcli command
+        """
+        command = ["wp"]
+        command.extend(cmd)
+
+        if platform.system() == "Darwin":
+            user_uid = 1000
+        else:
+            user_uid = os.getuid()
+        project = self.get_project('docker-compose.yml')
+        wp = project.get_service("wordpress")
+        my = project.get_service("mysql")
+
+        wp_container = wp.get_container()
+        my_container = my.get_container()
+        assert my_container.is_running
+        assert wp_container.is_running
+        c = docker_client()
+        c._version = '1.15'
+
+        cli_container = c.create_container(command=command,
+            image="bearstech/wpcli", user=user_uid, detach=False
+        )
+        try:
+            log.info("Executing : wp-cli %s" % " ".join(cmd))
+            c.start(container=cli_container.get("Id"),
+                volumes_from=[wp_container.get("Id")],
+                links={my_container.name: "db",
+                       wp_container.name: "wp"})
+            c.wait(container=cli_container.get("Id"))
+        except Exception, e:
+            log.error(c.logs(container=cli_container.get("Id"), stdout=True,
+                            stderr=True))
+            c.remove_container(container=cli_container.get("Id"), v=True,
+                               force=True)
+            raise e
+        else:
+            log.info(c.logs(container=cli_container.get("Id"), stdout=True,
+                            stderr=True))
+            c.remove_container(container=cli_container.get("Id"), v=True,
+                               force=True)
+
+
     def mysql(self, sql):
         return self.exec_('wordpress', 'mysql', '-h', 'db',
                           '-u', self.config['db']['user'],
@@ -262,48 +306,13 @@ wpfactory init''')
                     'ERROR 1045 (28000): Access denied for user'):
                 raise e
             # FIXME what happens if the DB is not ready?
-        # XXX
-        if platform.system() == "Darwin":
-            user_uid = 1000
-        else:
-            user_uid = os.getuid()
-        project = self.get_project('docker-compose.yml')
-        wp = project.get_service("wordpress")
-        my = project.get_service("mysql")
 
-        wp_container = wp.get_container()
-        my_container = my.get_container()
-        assert my_container.is_running
-        assert wp_container.is_running
-        c = docker_client()
-        c._version = '1.15'
-
-        cli_container = c.create_container(
-            image="bearstech/wpcli", user=user_uid, detach=False
-        )
-        try:
-            log.info("Configuring wordpress...")
-            c.start(container=cli_container.get("Id"),
-                volumes_from=[wp_container.get("Id")],
-                links={my_container.name: "db",
-                       wp_container.name: "wp"})
-            c.wait(container=cli_container.get("Id"))
-        except Exception, e:
-            log.error(c.logs(container=cli_container.get("Id"), stdout=True,
-                            stderr=True))
-            c.remove_container(container=cli_container.get("Id"), v=True,
-                               force=True)
-            raise e
-        else:
-            log.info(c.logs(container=cli_container.get("Id"), stdout=True,
-                            stderr=True))
-            #c.remove_container(container=cli_container.get("Id"), v=True,
-            #                   force=True)
+        self.wpcli(["core", "version"])
 
         if 'plugin' in conf:
             for plugin in conf['plugin']:
-                self._wp('plugin', 'install', plugin)
-                self._wp('plugin', 'activate', plugin)
+                self.wpcli(['plugin', 'install', plugin])
+                self.wpcli(['plugin', 'activate', plugin])
 
     def build(self, project, options):
         """
@@ -450,7 +459,7 @@ wpfactory init''')
                     container.inspect()['Volumes']['/var/www/test/root']
         print "Everything looks ok."
 
-    def wp(self, project, options):
+    def _wp2(self, project, options):
         """
         WP-cli
 
@@ -467,6 +476,15 @@ wpfactory init''')
         options['-T'] = False
         options['-e'] = False
         return self.run(project, options)
+
+    def wp(self, project, options):
+        """
+        WP-cli
+
+        Usage: wp [ARGS...]
+        """
+        conf = self.config
+        self.wpcli(options.get("ARGS"))
 
 
 def main():
