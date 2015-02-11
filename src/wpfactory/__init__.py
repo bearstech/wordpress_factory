@@ -165,19 +165,16 @@ wpfactory init''')
                         'mailhog:mail'
                     ],
                     'environment': {
-                        'WORDPRESS_ID': user_uid
+                        'WORDPRESS_ID': user_uid,
+                        'WORDPRESS_ADMIN_EMAIL': self.config['admin']['email'],
+                        'WORDPRESS_ADMIN_USER': self.config['admin']['user'],
+                        'WORDPRESS_ADMIN_PASSWORD': self.config['admin']['password'],
+                        'WORDPRESS_LANGUAGE': " ".join(self.config['language']),
+                        #'WORDPRESS_BLOGNAME': self.config['name'],
+                        'WORDPRESS_SITE_URL': "http://%s" % self.config['url'],
+                        'WORDPRESS_TITLE': self.config['name']
                     }
                 },
-                'wpcli': {
-                    'image': 'bearstech/wpcli',
-                    'volumes_from': [
-                        'wordpress'
-                    ],
-                    'links': [
-                        'mysql:db'
-                    ],
-                    'user': user_uid
-                }
             }
             yaml.dump(fig, open('docker-compose.yml', 'w'), explicit_start=True,
                       default_flow_style=False)
@@ -265,37 +262,43 @@ wpfactory init''')
                     'ERROR 1045 (28000): Access denied for user'):
                 raise e
             # FIXME what happens if the DB is not ready?
-
-        if not os.path.exists('wordpress/wp-admin/index.php'):
-            # Download Wordpress
-            self._wp('core', 'download')
-
-        # Configure it and install it
-        if os.path.exists('wordpress/wp-config.php'):
-            print "wp-config.php already exist"
+        # XXX
+        if platform.system() == "Darwin":
+            user_uid = 1000
         else:
-            self._wp('core', 'config',  # '--skip-check',
-                    '--dbname=%s' % conf['db']['name'],
-                    '--dbuser=%s' % conf['db']['user'],
-                    '--dbpass=%s' % conf['db']['pass'],
-                    '--dbhost=db'
-                    )
+            user_uid = os.getuid()
+        project = self.get_project('docker-compose.yml')
+        wp = project.get_service("wordpress")
+        my = project.get_service("mysql")
+
+        wp_container = wp.get_container()
+        my_container = my.get_container()
+        assert my_container.is_running
+        assert wp_container.is_running
+        c = docker_client()
+        c._version = '1.15'
+
+        cli_container = c.create_container(
+            image="bearstech/wpcli", user=user_uid, detach=False
+        )
         try:
-            self._wp('core', 'is-installed')
-        except DockerCommandException as e:
-            self._wp('core', 'install', '--url=%s' % conf['url'],
-                    '--title="%s"' % conf['name'],
-                    '--admin_email=%s' % conf['admin']['email'],
-                    '--admin_user=%s' % conf['admin']['user'],
-                    '--admin_password=%s' % conf['admin']['password'])
-
-        self._wp('option', 'set', 'siteurl', "http://%s" % conf['url'])
-        self._wp('option', 'set', 'blogname', '"%s"' % conf['name'])
-
-        for language in conf['language']:
-            if language != 'en':
-                self._wp('core', 'language', 'install', language)
-                self._wp('core', 'language', 'activate', language)
+            log.info("Configuring wordpress...")
+            c.start(container=cli_container.get("Id"),
+                volumes_from=[wp_container.get("Id")],
+                links={my_container.name: "db",
+                       wp_container.name: "wp"})
+            c.wait(container=cli_container.get("Id"))
+        except Exception, e:
+            log.error(c.logs(container=cli_container.get("Id"), stdout=True,
+                            stderr=True))
+            c.remove_container(container=cli_container.get("Id"), v=True,
+                               force=True)
+            raise e
+        else:
+            log.info(c.logs(container=cli_container.get("Id"), stdout=True,
+                            stderr=True))
+            #c.remove_container(container=cli_container.get("Id"), v=True,
+            #                   force=True)
 
         if 'plugin' in conf:
             for plugin in conf['plugin']:

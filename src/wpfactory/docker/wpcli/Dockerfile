@@ -24,4 +24,4 @@ RUN git clone https://github.com/danielbachhuber/dictator.git
 COPY docker-entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
-CMD ["wp", "help", "--allow-root"]
+CMD ["wp", "core", "version", "--allow-root"]
