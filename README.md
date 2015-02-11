@@ -34,29 +34,42 @@ Demo time
 
 Scaffolding
 
-    ./wpfactory init
+    ./bin/wpfactory init
 
 Modify the wordpress.yml file
 
 Start services
 
-    ./wpfactory up
+    ./bin/wpfactory up -d
+
+(You can remove `-d` to see full logs)
 
 Configure your wordpress
 
-    ./wpfactory config
+    ./bin/wpfactory config
 
 Wordpress is now running, in port 8000, localhost for linux, ask boot2docker on
 a Mac :
 
-    ./wpfactory home
+    ./bin/wpfactory home
+
+Cleaning
+--------
+
+Now you enjoyed your wordpress you can stop it:
+
+    ./bin/wpfactory stop
+
+And eventually remove all containers:
+
+    ./bin/wpfactory rm
 
 Manual build
 ------------
 
 You still can manually build theses docker containers:
 
-    ./wpfactory build
+    ./bin/wpfactory build
 
 Then modify `docker-compose.yml` and remove `registry.bearstech.com\` prefix
 from image name of all your builded images.
