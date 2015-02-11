@@ -8,6 +8,11 @@ if [ "$1" = 'wp' ]; then
 		path: $WP_CLI_ROOT_PATH
 		require:
 		    - /opt/dictator/dictator.php
+		core config:
+		    dbuser: $DB_ENV_MYSQL_USER
+		    dbpass: $DB_ENV_MYSQL_PASSWORD
+		    dbname: $DB_ENV_MYSQL_DATABASE
+		    dbhost: $DB_PORT_3306_TCP_ADDR
 		EOF
 	fi
 	exec "$@"
