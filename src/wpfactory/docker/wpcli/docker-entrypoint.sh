@@ -15,6 +15,12 @@ if [ "$1" = 'wp' ]; then
 		    dbhost: $DB_PORT_3306_TCP_ADDR
 		EOF
 	fi
+	if [ ! -f "$WP_CLI_ROOT_PATH/wp-config.php" ]; then
+        set -- wp core config
+    fi
+	if [ ! -f "$WP_CLI_ROOT_PATH/wp-cron.php" ]; then
+        set -- wp core download
+    fi
 	exec "$@"
 
 fi
