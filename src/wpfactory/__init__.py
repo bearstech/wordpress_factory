@@ -137,12 +137,12 @@ wpfactory init''')
             port = self.config["url"].split(":")[1]
             fig = {
                 'mailhog': {
-                    'image': 'bearstech/mailhog',
+                    'image': 'registry.bearstech.com/bearstech/mailhog',
                     'ports': [25, 8025],
                     'hostname': 'mail.example.com'},
                 'mysql': {
                     'ports': [3306],
-                    'image': 'bearstech/mysql',
+                    'image': 'registry.bearstech.com/bearstech/mysql',
                     'environment': {
                         'MYSQL_ROOT_PASSWORD': 'mypass',
                         'MYSQL_DATABASE': self.config['db']['name'],
@@ -151,7 +151,7 @@ wpfactory init''')
                     }
                 },
                 'wordpress': {
-                    'image': 'bearstech/wordpress',
+                    'image': 'registry.bearstech.com/bearstech/wordpress',
                     'ports': ["%s:80" % port],
                     'hostname': 'wordpress.example.com',
                     'volumes': [
