@@ -112,6 +112,7 @@ Wordpress factory.
       wxr       WXR exchange format
       dictator  Dictator flat configuration
       doctor    Checkup for broken factory
+      config    Initial setup and Wordpress configuration
 
     """
     def perform_command(self, options, handler, command_options):
