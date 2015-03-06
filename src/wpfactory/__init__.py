@@ -23,6 +23,7 @@ from compose.cli.errors import UserError
 from compose.project import NoSuchService, ConfigurationError
 from compose.service import BuildError
 from compose.cli.docopt_command import NoSuchCommand
+from docker.client import utils
 
 log = logging.getLogger(__name__)
 hdl = logging.StreamHandler()
