@@ -8,8 +8,14 @@ RUN apt-get update && apt-get -y install php5-cgi \
     && rm -r /var/lib/apt/lists/*
 COPY website.conf /etc/apache2/sites-available/default
 COPY fcgid.conf /etc/apache2/mods-available/
+RUN a2enmod headers
+RUN a2enmod rewrite
 RUN a2enmod suexec
+RUN a2dismod cgid
 
+COPY php-fastcgi.ini /etc/php5/cgi/php.ini
+RUN rm -f /etc/php5/cli/php.ini
+RUN ln -s /etc/php5/cgi/php.ini ${prefix}/etc/php5/cli/php.ini
 
 RUN mkdir -p /opt/wpcli /usr/share/phptop /var/www/suexec/wordpress
 
