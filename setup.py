@@ -24,7 +24,7 @@ setup(
     install_requires=[
         'pyyaml',
         'clint',
-        'requests<2.5',
+        'requests>=2.20.0',
         'backports.ssl-match-hostname',
         'docker-compose'
     ]
